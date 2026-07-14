@@ -80,6 +80,76 @@
   <h1 class="text-2xl font-extrabold text-forestDark mb-1">مدیریت نوبت‌ها</h1>
   <p id="subtitle" class="text-sm text-ink/45 mb-8"></p>
 
+
+  <!-- عکس پروفایل پزشک -->
+  <section id="doctorPhotoSection" class="hidden bg-white rounded-[2rem] border border-ink/[0.06] p-7 mb-10">
+    <h2 class="text-lg font-bold text-forestDark mb-1">عکس پروفایل من</h2>
+    <p class="text-sm text-ink/45 mb-6">
+      این عکس در صفحه اصلی و هنگام انتخاب دامپزشک به کاربران نمایش داده می‌شود.
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      <div class="shrink-0">
+        <img
+          id="doctorPhotoPreview"
+          src=""
+          alt="پیش‌نمایش عکس پروفایل پزشک"
+          class="hidden w-32 h-32 rounded-full object-cover border-4 border-mist shadow-sm"
+        >
+
+        <div
+          id="doctorPhotoPlaceholder"
+          class="w-32 h-32 rounded-full bg-mist flex items-center justify-center text-forest font-bold text-sm border-4 border-white shadow-sm"
+        >
+          بدون عکس
+        </div>
+      </div>
+
+      <div class="flex-1 w-full">
+        <input
+          type="file"
+          id="doctorPhotoInput"
+          accept="image/jpeg,image/png,image/webp"
+          class="hidden"
+        >
+
+        <label
+          for="doctorPhotoInput"
+          class="inline-flex cursor-pointer items-center justify-center bg-mist hover:bg-forest hover:text-white text-forest font-bold px-5 py-3 rounded-xl transition-colors text-sm"
+        >
+          انتخاب عکس
+        </label>
+
+        <p id="selectedPhotoName" class="text-xs text-ink/40 mt-3">
+          هنوز عکسی انتخاب نشده است.
+        </p>
+
+        <p class="text-xs text-ink/40 mt-2 leading-6">
+          فرمت‌های مجاز: JPG، PNG و WebP<br>
+          حداکثر حجم: ۳ مگابایت
+        </p>
+
+        <p
+          id="doctorPhotoError"
+          class="hidden text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3 mt-4"
+        ></p>
+
+        <p
+          id="doctorPhotoSuccess"
+          class="hidden text-sm text-forest bg-mist rounded-xl px-4 py-3 mt-4"
+        ></p>
+
+        <button
+          id="uploadDoctorPhotoBtn"
+          type="button"
+          class="mt-5 bg-forest hover:bg-forestDark text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-forest/25 text-sm disabled:opacity-50"
+        >
+          ذخیره عکس
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- خدماتی که ارائه می‌دهم (فقط برای پزشک) -->
   <section id="myServicesSection" class="hidden bg-white rounded-[2rem] border border-ink/[0.06] p-7 mb-10">
     <h2 class="text-lg font-bold text-forestDark mb-1">خدماتی که ارائه می‌دهم</h2>
@@ -463,6 +533,86 @@
     successBox.classList.remove('hidden');
   });
 
+
+  // ---------------- پیش‌نمایش محلی عکس پزشک ----------------
+  let selectedDoctorPhotoFile = null;
+  let doctorPhotoPreviewUrl = null;
+
+  function resetDoctorPhotoMessages() {
+    document.getElementById('doctorPhotoError').classList.add('hidden');
+    document.getElementById('doctorPhotoSuccess').classList.add('hidden');
+  }
+
+  function showDoctorPhotoPreview(url) {
+    const image = document.getElementById('doctorPhotoPreview');
+    const placeholder = document.getElementById('doctorPhotoPlaceholder');
+
+    image.src = url;
+    image.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  }
+
+  document.getElementById('doctorPhotoInput').addEventListener('change', function () {
+    resetDoctorPhotoMessages();
+
+    const file = this.files && this.files[0];
+    const errorBox = document.getElementById('doctorPhotoError');
+    const fileNameBox = document.getElementById('selectedPhotoName');
+
+    if (!file) {
+      selectedDoctorPhotoFile = null;
+      fileNameBox.textContent = 'هنوز عکسی انتخاب نشده است.';
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 3 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      this.value = '';
+      selectedDoctorPhotoFile = null;
+      fileNameBox.textContent = 'هنوز عکسی انتخاب نشده است.';
+      errorBox.textContent = 'فقط فایل‌های JPG، PNG یا WebP قابل قبول هستند.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      this.value = '';
+      selectedDoctorPhotoFile = null;
+      fileNameBox.textContent = 'هنوز عکسی انتخاب نشده است.';
+      errorBox.textContent = 'حجم عکس باید کمتر از ۳ مگابایت باشد.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+
+    selectedDoctorPhotoFile = file;
+    fileNameBox.textContent = file.name;
+
+    if (doctorPhotoPreviewUrl) {
+      URL.revokeObjectURL(doctorPhotoPreviewUrl);
+    }
+
+    doctorPhotoPreviewUrl = URL.createObjectURL(file);
+    showDoctorPhotoPreview(doctorPhotoPreviewUrl);
+  });
+
+  document.getElementById('uploadDoctorPhotoBtn').addEventListener('click', function () {
+    resetDoctorPhotoMessages();
+
+    const errorBox = document.getElementById('doctorPhotoError');
+    const successBox = document.getElementById('doctorPhotoSuccess');
+
+    if (!selectedDoctorPhotoFile) {
+      errorBox.textContent = 'ابتدا یک عکس انتخاب کنید.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+
+    successBox.textContent = 'عکس انتخاب شد. اتصال به فضای ذخیره‌سازی در مرحله بعد انجام می‌شود.';
+    successBox.classList.remove('hidden');
+  });
+
   async function init() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
@@ -494,6 +644,8 @@
       : 'مشاهده و مدیریت نوبت‌های مربوط به شما';
 
     if (myRole === 'doctor') {
+      document.getElementById('doctorPhotoSection').classList.remove('hidden');
+
       document.getElementById('myServicesSection').classList.remove('hidden');
       await loadMyServices();
 
