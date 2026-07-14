@@ -83,7 +83,7 @@
     </nav>
 
     <div class="flex items-center gap-3">
-      <a href="auth.html" class="hidden sm:inline-block text-sm font-semibold text-forest hover:text-forestDark transition-colors">ورود</a>
+      <a href="auth.html" id="loginLink" class="hidden sm:inline-block text-sm font-semibold text-forest hover:text-forestDark transition-colors">ورود</a>
       <a href="auth.html" class="booking-cta bg-forest hover:bg-forestDark text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all shadow-sm shadow-forest/20 hover:shadow-md hover:shadow-forest/30">
         دریافت نوبت
       </a>
@@ -100,7 +100,7 @@
     <a href="#doctors" class="hover:text-forest">دامپزشکان</a>
     <a href="#testimonials" class="hover:text-forest">نظرات</a>
     <a href="#faq" class="hover:text-forest">سوالات متداول</a>
-    <a href="auth.html" class="text-forest font-semibold">ورود</a>
+    <a href="auth.html" id="mobileLoginLink" class="text-forest font-semibold">ورود</a>
   </div>
 </header>
 
@@ -623,10 +623,37 @@ async function loadServices() {
     document.querySelectorAll('.booking-cta').forEach(el => { el.href = target; });
   }
 
+  // اگر کاربر لاگین کرده باشد، دکمه‌ی «ورود» به «حساب من» تبدیل می‌شود
+  // و مستقیم به داشبورد مناسب (بیمار یا ادمین/دکتر) می‌رود
+  async function setupAccountLink() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const loginLink = document.getElementById('loginLink');
+    const mobileLoginLink = document.getElementById('mobileLoginLink');
+
+    if (!session) return; // کاربر لاگین نکرده؛ لینک «ورود» همان‌طور می‌ماند
+
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    const target = (profile?.role === 'admin' || profile?.role === 'doctor')
+      ? 'admin-dashboard.html'
+      : 'dashboard.html';
+
+    [loginLink, mobileLoginLink].forEach(el => {
+      if (!el) return;
+      el.href = target;
+      el.textContent = 'حساب من';
+    });
+  }
+
   (async function () {
     await loadServices();
     await loadDoctors();
     await setupBookingLinks();
+    await setupAccountLink();
   })();
 </script>
 
