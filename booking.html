@@ -213,6 +213,20 @@
     return '؟';
   }
 
+  function getDoctorFullName(doctor) {
+    if (!doctor) return '';
+
+    if (doctor.profile_full_name) {
+      return doctor.profile_full_name;
+    }
+
+    const profile = Array.isArray(doctor.profiles)
+      ? doctor.profiles[0]
+      : doctor.profiles;
+
+    return profile?.full_name || '';
+  }
+
   function escapeReviewText(value) {
     return String(value || '')
       .replaceAll('&', '&amp;')
@@ -397,8 +411,7 @@
           id,
           specialty,
           bio,
-          photo_url,
-          profiles ( full_name )
+          photo_url
         )
       `)
       .eq('service_id', serviceId);
@@ -433,6 +446,29 @@
 
     const doctorIds = doctors.map(doctor => doctor.id);
 
+    // نام پزشکان را مستقیماً از جدول profiles می‌خوانیم.
+    // شناسه پزشک و شناسه پروفایل در ساختار این پروژه یکسان است.
+    const { data: doctorProfiles, error: profilesError } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', doctorIds);
+
+    if (profilesError) {
+      console.error('خطا در دریافت نام پزشکان:', profilesError);
+    }
+
+    const profileNamesById = new Map(
+      (doctorProfiles || []).map(profile => [
+        String(profile.id),
+        profile.full_name || ''
+      ])
+    );
+
+    doctors.forEach(doctor => {
+      doctor.profile_full_name =
+        profileNamesById.get(String(doctor.id)) || getDoctorFullName(doctor);
+    });
+
     const { data: reviews, error: reviewsError } = await supabaseClient
       .from('doctor_reviews')
       .select('id, doctor_id, rating, review_text, created_at')
@@ -466,7 +502,7 @@
       doctor.latestReview = doctorReviews[0] || null;
 
       doctorReviewsStore.set(String(doctor.id), {
-        name: formatDoctorName(doctor.profiles?.full_name),
+        name: formatDoctorName(getDoctorFullName(doctor)),
         reviews: doctorReviews,
         reviewCount,
         averageRating
@@ -474,8 +510,8 @@
     });
 
     list.innerHTML = doctors.map(doctor => {
-      const name = formatDoctorName(doctor.profiles?.full_name);
-      const initials = getDoctorInitials(doctor.profiles?.full_name);
+      const name = formatDoctorName(getDoctorFullName(doctor));
+      const initials = getDoctorInitials(getDoctorFullName(doctor));
 
       const photoMarkup = doctor.photo_url
         ? `
@@ -734,8 +770,8 @@
   // ---------- STEP 4: summary + submit ----------
   function buildSummary() {
     const box = document.getElementById('summaryBox');
-    const doctorName = formatDoctorName(selectedDoctor.profiles?.full_name);
-    const doctorInitials = getDoctorInitials(selectedDoctor.profiles?.full_name);
+    const doctorName = formatDoctorName(getDoctorFullName(selectedDoctor));
+    const doctorInitials = getDoctorInitials(getDoctorFullName(selectedDoctor));
 
     const summaryPhoto = selectedDoctor.photo_url
       ? `
