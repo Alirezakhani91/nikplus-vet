@@ -100,10 +100,16 @@
 
   <!-- ===== STEP 2: DOCTOR ===== -->
   <section id="step2" class="step-panel hidden">
-    <h2 class="text-lg font-bold text-forestDark mb-5">۲. انتخاب دامپزشک</h2>
+    <h2 class="text-lg font-bold text-forestDark">۲. انتخاب دامپزشک</h2>
+    <p id="selectedServiceHint" class="text-sm text-ink/45 mt-1 mb-5"></p>
+
     <div id="doctorsList" class="grid sm:grid-cols-2 gap-4"></div>
-    <p id="doctorsEmpty" class="hidden text-sm text-ink/40 text-center py-8">دامپزشکی برای نمایش وجود ندارد.</p>
-    <button data-back="1" class="back-btn mt-6 text-sm font-bold text-ink/50 hover:text-forest transition-colors">◂ بازگشت</button>
+
+    <p id="doctorsEmpty" class="hidden text-sm text-ink/45 text-center bg-white border border-ink/[0.06] rounded-2xl px-5 py-8">
+      در حال حاضر هیچ دامپزشکی برای این خدمت ثبت نشده است.
+    </p>
+
+    <button data-back="1" class="back-btn mt-6 text-sm font-bold text-ink/50 hover:text-forest transition-colors">◂ بازگشت و تغییر خدمت</button>
   </section>
 
   <!-- ===== STEP 3: DATE & TIME ===== -->
@@ -327,40 +333,101 @@
       .order('created_at', { ascending: true });
 
     const list = document.getElementById('servicesList');
+
     if (error || !services || services.length === 0) {
       document.getElementById('servicesEmpty').classList.remove('hidden');
+      console.error('خطا در دریافت خدمات:', error);
       return;
     }
 
-    list.innerHTML = services.map(s => `
-      <button data-id="${s.id}" class="card-select service-card text-right bg-white border border-ink/10 rounded-2xl p-5 hover:border-forest/40 transition-all">
-        <h3 class="font-bold text-forestDark mb-1">${s.title}</h3>
-        <p class="text-xs text-ink/50 leading-6">${s.description ?? ''}</p>
-        <p class="text-xs text-forest font-bold mt-2">${s.duration_minutes ? s.duration_minutes + ' دقیقه' : ''}</p>
+    list.innerHTML = services.map(service => `
+      <button
+        type="button"
+        data-id="${service.id}"
+        class="card-select service-card text-right bg-white border border-ink/10 rounded-2xl p-5 hover:border-forest/40 transition-all"
+      >
+        <h3 class="font-bold text-forestDark mb-1">${service.title}</h3>
+        <p class="text-xs text-ink/50 leading-6">${service.description ?? ''}</p>
+        <p class="text-xs text-forest font-bold mt-2">
+          ${service.duration_minutes ? service.duration_minutes + ' دقیقه' : ''}
+        </p>
       </button>
     `).join('');
 
     list.querySelectorAll('.service-card').forEach(card => {
-      card.addEventListener('click', () => {
-        selectedService = services.find(s => s.id == card.dataset.id);
-        list.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+      card.addEventListener('click', async () => {
+        selectedService = services.find(service => String(service.id) === String(card.dataset.id));
+        selectedDoctor = null;
+        selectedDate = null;
+        selectedTime = null;
+
+        list.querySelectorAll('.service-card').forEach(item => item.classList.remove('selected'));
         card.classList.add('selected');
-        setTimeout(() => showStep(2), 150);
+
+        document.getElementById('selectedServiceHint').textContent =
+          `پزشکان ارائه‌دهنده خدمت «${selectedService.title}»`;
+
+        document.getElementById('dateInput').value = '';
+        document.getElementById('slotsWrap').classList.add('hidden');
+        document.getElementById('slotsList').innerHTML = '';
+
+        showStep(2);
+        await loadDoctorsForService(selectedService.id);
       });
     });
   }
 
-  // ---------- STEP 2: doctors ----------
-  async function loadDoctors() {
-    const { data: doctors, error } = await supabaseClient
-      .from('doctors')
-      .select('id, specialty, bio, photo_url, profiles ( full_name )');
-
+  // ---------- STEP 2: doctors filtered by selected service ----------
+  async function loadDoctorsForService(serviceId) {
     const list = document.getElementById('doctorsList');
+    const emptyMessage = document.getElementById('doctorsEmpty');
 
-    if (error || !doctors || doctors.length === 0) {
-      document.getElementById('doctorsEmpty').classList.remove('hidden');
-      console.error('خطا در دریافت پزشکان:', error);
+    list.innerHTML = `
+      <div class="col-span-full bg-white border border-ink/[0.06] rounded-2xl px-5 py-8 text-center">
+        <p class="text-sm text-ink/45">در حال دریافت پزشکان این خدمت...</p>
+      </div>
+    `;
+    emptyMessage.classList.add('hidden');
+
+    const { data: rows, error } = await supabaseClient
+      .from('doctor_services')
+      .select(`
+        doctor_id,
+        doctors (
+          id,
+          specialty,
+          bio,
+          photo_url,
+          profiles ( full_name )
+        )
+      `)
+      .eq('service_id', serviceId);
+
+    if (error) {
+      console.error('خطا در دریافت پزشکان مرتبط با خدمت:', error);
+      list.innerHTML = `
+        <div class="col-span-full bg-red-50 border border-red-100 rounded-2xl px-5 py-8 text-center">
+          <p class="text-sm text-red-600">خطا در دریافت پزشکان این خدمت. لطفاً صفحه را دوباره بارگذاری کنید.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // حذف رکوردهای خالی و تکراری
+    const uniqueDoctors = new Map();
+
+    (rows || []).forEach(row => {
+      const doctor = row.doctors;
+      if (doctor?.id) {
+        uniqueDoctors.set(String(doctor.id), doctor);
+      }
+    });
+
+    const doctors = [...uniqueDoctors.values()];
+
+    if (doctors.length === 0) {
+      list.innerHTML = '';
+      emptyMessage.classList.remove('hidden');
       return;
     }
 
@@ -389,12 +456,14 @@
     doctors.forEach(doctor => {
       const doctorReviews = reviewsByDoctor.get(String(doctor.id)) || [];
       const reviewCount = doctorReviews.length;
+
       const averageRating = reviewCount
         ? doctorReviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) / reviewCount
         : 0;
 
       doctor.reviewCount = reviewCount;
       doctor.averageRating = averageRating;
+      doctor.latestReview = doctorReviews[0] || null;
 
       doctorReviewsStore.set(String(doctor.id), {
         name: formatDoctorName(doctor.profiles?.full_name),
@@ -410,70 +479,95 @@
 
       const photoMarkup = doctor.photo_url
         ? `
-          <div class="relative w-20 h-20 shrink-0">
+          <div class="relative w-24 h-24 mx-auto">
             <img
               src="${doctor.photo_url}"
               alt="عکس ${name}"
               loading="lazy"
-              class="w-20 h-20 rounded-full object-cover border-4 border-mist shadow-sm"
+              class="w-24 h-24 rounded-full object-cover border-4 border-mist shadow-sm"
               onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');"
             >
 
-            <div class="hidden w-20 h-20 rounded-full bg-mist items-center justify-center text-xl font-extrabold text-forest">
+            <div class="hidden w-24 h-24 rounded-full bg-mist items-center justify-center text-xl font-extrabold text-forest">
               ${initials}
             </div>
           </div>
         `
         : `
-          <div class="w-20 h-20 rounded-full bg-mist flex items-center justify-center text-xl font-extrabold text-forest shrink-0">
+          <div class="w-24 h-24 mx-auto rounded-full bg-mist flex items-center justify-center text-xl font-extrabold text-forest">
             ${initials}
+          </div>
+        `;
+
+      const latestReviewMarkup = doctor.latestReview
+        ? `
+          <div class="mt-4 bg-cream/80 border border-ink/[0.06] rounded-2xl p-4 text-right">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <div class="flex items-center gap-0.5 text-xs" dir="ltr">
+                ${renderReviewStars(doctor.latestReview.rating)}
+              </div>
+
+              <span class="text-[10px] font-bold text-forest bg-mist px-2 py-1 rounded-full">
+                مراجع تأییدشده
+              </span>
+            </div>
+
+            <p class="text-xs text-ink/60 leading-6 line-clamp-3">
+              ${escapeReviewText(doctor.latestReview.review_text)}
+            </p>
+
+            <p class="text-[10px] text-ink/30 mt-2">
+              ${formatReviewDate(doctor.latestReview.created_at)}
+            </p>
+          </div>
+        `
+        : `
+          <div class="mt-4 bg-cream/60 border border-ink/[0.05] rounded-2xl p-4 text-center">
+            <p class="text-xs text-ink/35">هنوز نظری برای این پزشک ثبت نشده است.</p>
           </div>
         `;
 
       return `
         <article
           data-doctor-card="${doctor.id}"
-          class="card-select doctor-card bg-white border border-ink/10 rounded-2xl p-5 transition-all"
+          tabindex="0"
+          role="button"
+          aria-label="انتخاب ${name}"
+          class="card-select doctor-card cursor-pointer bg-white border border-ink/10 rounded-3xl p-5 transition-all hover:border-forest/35 hover:shadow-lg hover:shadow-forest/[0.06]"
         >
-          <div class="flex items-start gap-4">
-            ${photoMarkup}
+          ${photoMarkup}
 
-            <div class="min-w-0 flex-1 text-right">
-              <h3 class="font-extrabold text-forestDark">
-                ${name}
-              </h3>
+          <div class="mt-4 text-center">
+            <h3 class="font-extrabold text-forestDark">${name}</h3>
 
-              <p class="text-xs text-forest font-bold mt-1">
-                ${doctor.specialty || 'دامپزشک نیک‌پلاس'}
-              </p>
+            <p class="text-xs text-forest font-bold mt-1">
+              ${doctor.specialty || 'دامپزشک نیک‌پلاس'}
+            </p>
 
-              ${doctor.reviewCount ? `
-                <div class="mt-2 flex flex-wrap items-center gap-2">
-                  <div class="flex items-center gap-0.5 text-sm" dir="ltr">
-                    ${renderReviewStars(doctor.averageRating)}
-                  </div>
-
-                  <span class="text-xs font-extrabold text-forestDark">
-                    ${doctor.averageRating.toFixed(1)}
-                  </span>
-
-                  <span class="text-[11px] text-ink/40">
-                    از ${doctor.reviewCount} نظر
-                  </span>
+            ${doctor.reviewCount ? `
+              <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                <div class="flex items-center gap-0.5 text-sm" dir="ltr">
+                  ${renderReviewStars(doctor.averageRating)}
                 </div>
-              ` : `
-                <p class="text-[11px] text-ink/35 mt-2">
-                  هنوز نظری ثبت نشده است.
-                </p>
-              `}
-            </div>
+
+                <span class="text-xs font-extrabold text-forestDark">
+                  ${doctor.averageRating.toFixed(1)}
+                </span>
+
+                <span class="text-[11px] text-ink/40">
+                  از ${doctor.reviewCount} نظر
+                </span>
+              </div>
+            ` : ''}
           </div>
 
           ${doctor.bio ? `
-            <p class="text-xs text-ink/50 leading-6 mt-4 text-right">
+            <p class="text-xs text-ink/50 leading-6 mt-4 text-center">
               ${doctor.bio}
             </p>
           ` : ''}
+
+          ${latestReviewMarkup}
 
           <div class="grid ${doctor.reviewCount ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mt-4">
             <button
@@ -481,7 +575,7 @@
               data-select-doctor="${doctor.id}"
               class="select-doctor-btn bg-forest hover:bg-forestDark text-white text-xs font-bold px-4 py-3 rounded-xl transition-colors"
             >
-              انتخاب این پزشک
+              انتخاب و مشاهده ساعت‌ها
             </button>
 
             ${doctor.reviewCount ? `
@@ -490,7 +584,7 @@
                 data-view-doctor-reviews="${doctor.id}"
                 class="view-doctor-reviews-btn bg-mist hover:bg-forest hover:text-white text-forest text-xs font-bold px-4 py-3 rounded-xl transition-colors"
               >
-                مشاهده نظرات
+                همه نظرات
               </button>
             ` : ''}
           </div>
@@ -498,24 +592,54 @@
       `;
     }).join('');
 
+    function selectDoctor(doctorId) {
+      selectedDoctor = doctors.find(
+        doctor => String(doctor.id) === String(doctorId)
+      );
+
+      if (!selectedDoctor) return;
+
+      selectedDate = null;
+      selectedTime = null;
+      document.getElementById('dateInput').value = '';
+      document.getElementById('slotsWrap').classList.add('hidden');
+      document.getElementById('slotsList').innerHTML = '';
+
+      list.querySelectorAll('.doctor-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+
+      const selectedCard = list.querySelector(`[data-doctor-card="${doctorId}"]`);
+      selectedCard?.classList.add('selected');
+
+      setTimeout(() => showStep(3), 150);
+    }
+
     list.querySelectorAll('.select-doctor-btn').forEach(button => {
-      button.addEventListener('click', () => {
-        selectedDoctor = doctors.find(doctor => String(doctor.id) === String(button.dataset.selectDoctor));
-
-        list.querySelectorAll('.doctor-card').forEach(card => {
-          card.classList.remove('selected');
-        });
-
-        const selectedCard = list.querySelector(`[data-doctor-card="${button.dataset.selectDoctor}"]`);
-        selectedCard?.classList.add('selected');
-
-        setTimeout(() => showStep(3), 150);
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        selectDoctor(button.dataset.selectDoctor);
       });
     });
 
     list.querySelectorAll('.view-doctor-reviews-btn').forEach(button => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
         openDoctorReviewsModal(button.dataset.viewDoctorReviews);
+      });
+    });
+
+    list.querySelectorAll('.doctor-card').forEach(card => {
+      card.addEventListener('click', event => {
+        if (event.target.closest('.view-doctor-reviews-btn')) return;
+        selectDoctor(card.dataset.doctorCard);
+      });
+
+      card.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          selectDoctor(card.dataset.doctorCard);
+        }
       });
     });
   }
@@ -715,7 +839,7 @@
       { minDateISO: today }
     );
 
-    await Promise.all([loadServices(), loadDoctors()]);
+    await loadServices();
 
     document.getElementById('pageLoading').classList.add('hidden');
     document.getElementById('pageContent').classList.remove('hidden');
