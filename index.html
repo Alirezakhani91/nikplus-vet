@@ -31,16 +31,29 @@
   * { font-family: 'Vazirmatn', sans-serif; }
   html { scroll-behavior: smooth; }
 
-  .heartbeat-path {
-    stroke-dasharray: 1400;
-    stroke-dashoffset: 1400;
-    animation: draw 3.2s ease-out forwards, pulseGlow 3.2s ease-out .2s;
+  .heartbeat-path-base {
+    opacity: .14;
   }
-  @keyframes draw {
+
+  .heartbeat-path-live {
+    stroke-dasharray: 160 1240;
+    stroke-dashoffset: 1400;
+    filter: drop-shadow(0 0 5px rgba(31, 92, 82, .55));
+    animation: heartbeatSweep 3.2s linear infinite;
+  }
+
+  .heartbeat-dot {
+    filter: drop-shadow(0 0 6px rgba(232, 146, 106, .8));
+  }
+
+  @keyframes heartbeatSweep {
+    from { stroke-dashoffset: 1400; }
     to { stroke-dashoffset: 0; }
   }
+
   @media (prefers-reduced-motion: reduce) {
-    .heartbeat-path { animation: none; stroke-dashoffset: 0; }
+    .heartbeat-path-live { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+    .heartbeat-dot { display: none; }
     .reveal { opacity: 1 !important; transform: none !important; }
   }
 
@@ -161,8 +174,9 @@
     <!-- SIGNATURE ELEMENT: heartbeat line that resolves into a paw print -->
     <div class="order-1 lg:order-2 relative">
       <div class="relative bg-white rounded-[2rem] border border-ink/[0.06] shadow-xl shadow-forest/[0.06] p-8 sm:p-10 overflow-hidden">
-        <svg viewBox="0 0 480 200" class="w-full h-auto" fill="none">
-          <path class="heartbeat-path"
+        <svg viewBox="0 0 480 200" class="w-full h-auto" fill="none" aria-label="نمودار متحرک ضربان قلب">
+          <path
+            class="heartbeat-path-base"
             d="M0 120
                L70 120
                L92 70
@@ -180,8 +194,65 @@
                L 336 150
                L 352 60
                L 368 120
-               L 480 120"
-            stroke="#1F5C52" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+               L480 120"
+            stroke="#1F5C52"
+            stroke-width="3.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+
+          <path
+            id="heartbeatMotionPath"
+            class="heartbeat-path-live"
+            d="M0 120
+               L70 120
+               L92 70
+               L112 165
+               L132 30
+               L152 120
+               C 170 120, 178 108, 190 118
+               C 200 126, 206 138, 214 128
+               C 220 120, 226 112, 234 122
+               C 240 130, 246 140, 254 130
+               L 262 122
+               C 268 116, 276 108, 284 120
+               C 292 132, 300 140, 310 126
+               L 320 100
+               L 336 150
+               L 352 60
+               L 368 120
+               L480 120"
+            stroke="#1F5C52"
+            stroke-width="4.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+
+          <circle class="heartbeat-dot" r="5" fill="#E8926A">
+            <animateMotion
+              dur="3.2s"
+              repeatCount="indefinite"
+              rotate="auto"
+              path="M0 120
+               L70 120
+               L92 70
+               L112 165
+               L132 30
+               L152 120
+               C 170 120, 178 108, 190 118
+               C 200 126, 206 138, 214 128
+               C 220 120, 226 112, 234 122
+               C 240 130, 246 140, 254 130
+               L 262 122
+               C 268 116, 276 108, 284 120
+               C 292 132, 300 140, 310 126
+               L 320 100
+               L 336 150
+               L 352 60
+               L 368 120
+               L480 120"
+            />
+          </circle>
         </svg>
 
         <div class="mt-4 flex items-center gap-2 text-ink/40 text-xs">
