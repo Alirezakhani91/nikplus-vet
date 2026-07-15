@@ -157,6 +157,33 @@
 
 </main>
 
+<!-- ===================== DOCTOR REVIEWS MODAL ===================== -->
+<div id="doctorReviewsModal" class="hidden fixed inset-0 z-[70] bg-ink/45 backdrop-blur-sm flex items-center justify-center px-4 py-6">
+  <div class="bg-white rounded-[2rem] border border-ink/[0.06] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div class="flex items-center justify-between gap-4 px-6 py-5 border-b border-ink/[0.06]">
+      <div>
+        <h3 id="doctorReviewsModalTitle" class="text-lg sm:text-xl font-extrabold text-forestDark">
+          نظرات پزشک
+        </h3>
+        <p id="doctorReviewsModalMeta" class="text-xs text-ink/45 mt-1"></p>
+      </div>
+
+      <button
+        id="closeDoctorReviewsModalBtn"
+        type="button"
+        aria-label="بستن پنجره نظرات"
+        class="w-10 h-10 rounded-full bg-mist text-forest hover:bg-forest hover:text-white transition-colors flex items-center justify-center shrink-0"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="doctorReviewsModalBody" class="p-6 overflow-y-auto max-h-[calc(90vh-96px)] space-y-3"></div>
+  </div>
+</div>
+
 <script src="supabase-client.js"></script>
 <script src="jalali.js"></script>
 <script>
@@ -165,6 +192,117 @@
   let selectedDoctor = null;
   let selectedDate = null;
   let selectedTime = null;
+  const doctorReviewsStore = new Map();
+
+  function formatDoctorName(fullName) {
+    const clean = (fullName || '').trim().replace(/^دکتر\s+/, '');
+    return clean ? 'دکتر ' + clean : 'دکتر';
+  }
+
+  function getDoctorInitials(fullName) {
+    const clean = (fullName || '').trim().replace(/^دکتر\s+/, '');
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return parts[0][0] + '.' + parts[1][0];
+    if (parts.length === 1) return parts[0][0];
+    return '؟';
+  }
+
+  function escapeReviewText(value) {
+    return String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function renderReviewStars(rating) {
+    const roundedRating = Math.round(Number(rating) || 0);
+
+    return [1, 2, 3, 4, 5]
+      .map(star => `
+        <span class="${star <= roundedRating ? 'text-amber-400' : 'text-ink/15'}">★</span>
+      `)
+      .join('');
+  }
+
+  function formatReviewDate(dateValue) {
+    if (!dateValue) return '';
+
+    try {
+      return new Intl.DateTimeFormat('fa-IR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(new Date(dateValue));
+    } catch {
+      return '';
+    }
+  }
+
+  function buildReviewCard(review) {
+    return `
+      <article class="bg-cream/80 border border-ink/[0.06] rounded-2xl p-4 text-right">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <div class="flex items-center gap-0.5 text-sm" dir="ltr">
+            ${renderReviewStars(review.rating)}
+          </div>
+
+          <span class="text-[11px] font-bold text-forest bg-mist px-2.5 py-1 rounded-full">
+            مراجع تأییدشده
+          </span>
+        </div>
+
+        <p class="text-sm text-ink/65 leading-7">
+          ${escapeReviewText(review.review_text)}
+        </p>
+
+        <p class="text-[11px] text-ink/35 mt-3">
+          ${formatReviewDate(review.created_at)}
+        </p>
+      </article>
+    `;
+  }
+
+  function openDoctorReviewsModal(doctorId) {
+    const doctorData = doctorReviewsStore.get(String(doctorId));
+    if (!doctorData) return;
+
+    const modal = document.getElementById('doctorReviewsModal');
+    const title = document.getElementById('doctorReviewsModalTitle');
+    const meta = document.getElementById('doctorReviewsModalMeta');
+    const body = document.getElementById('doctorReviewsModalBody');
+
+    title.textContent = `نظرات ${doctorData.name}`;
+
+    meta.textContent = doctorData.reviewCount
+      ? `میانگین امتیاز ${doctorData.averageRating.toFixed(1)} از ۵ • ${doctorData.reviewCount} نظر ثبت‌شده`
+      : 'هنوز نظری برای این پزشک ثبت نشده است.';
+
+    body.innerHTML = doctorData.reviewCount
+      ? doctorData.reviews.map(buildReviewCard).join('')
+      : `
+        <div class="bg-cream/80 border border-ink/[0.06] rounded-2xl p-6 text-center">
+          <p class="text-sm text-ink/45">هنوز نظری برای این پزشک ثبت نشده است.</p>
+        </div>
+      `;
+
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeDoctorReviewsModal() {
+    document.getElementById('doctorReviewsModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  document.getElementById('closeDoctorReviewsModalBtn').addEventListener('click', closeDoctorReviewsModal);
+
+  document.getElementById('doctorReviewsModal').addEventListener('click', event => {
+    if (event.target.id === 'doctorReviewsModal') {
+      closeDoctorReviewsModal();
+    }
+  });
 
   function showStep(n) {
     document.querySelectorAll('.step-panel').forEach((el, i) => {
@@ -216,28 +354,168 @@
   async function loadDoctors() {
     const { data: doctors, error } = await supabaseClient
       .from('doctors')
-      .select('id, specialty, bio, profiles ( full_name )');
+      .select('id, specialty, bio, photo_url, profiles ( full_name )');
 
     const list = document.getElementById('doctorsList');
+
     if (error || !doctors || doctors.length === 0) {
       document.getElementById('doctorsEmpty').classList.remove('hidden');
+      console.error('خطا در دریافت پزشکان:', error);
       return;
     }
 
-    list.innerHTML = doctors.map(d => `
-      <button data-id="${d.id}" class="card-select doctor-card text-right bg-white border border-ink/10 rounded-2xl p-5 hover:border-forest/40 transition-all">
-        <h3 class="font-bold text-forestDark mb-1">دکتر ${d.profiles?.full_name ?? ''}</h3>
-        <p class="text-xs text-forest font-bold mb-1">${d.specialty ?? ''}</p>
-        <p class="text-xs text-ink/50 leading-6">${d.bio ?? ''}</p>
-      </button>
-    `).join('');
+    const doctorIds = doctors.map(doctor => doctor.id);
 
-    list.querySelectorAll('.doctor-card').forEach(card => {
-      card.addEventListener('click', () => {
-        selectedDoctor = doctors.find(d => d.id == card.dataset.id);
-        list.querySelectorAll('.doctor-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
+    const { data: reviews, error: reviewsError } = await supabaseClient
+      .from('doctor_reviews')
+      .select('id, doctor_id, rating, review_text, created_at')
+      .in('doctor_id', doctorIds)
+      .order('created_at', { ascending: false });
+
+    if (reviewsError) {
+      console.error('خطا در دریافت نظرات پزشکان:', reviewsError);
+    }
+
+    const reviewsByDoctor = new Map();
+
+    (reviews || []).forEach(review => {
+      const key = String(review.doctor_id);
+      if (!reviewsByDoctor.has(key)) reviewsByDoctor.set(key, []);
+      reviewsByDoctor.get(key).push(review);
+    });
+
+    doctorReviewsStore.clear();
+
+    doctors.forEach(doctor => {
+      const doctorReviews = reviewsByDoctor.get(String(doctor.id)) || [];
+      const reviewCount = doctorReviews.length;
+      const averageRating = reviewCount
+        ? doctorReviews.reduce((sum, item) => sum + Number(item.rating || 0), 0) / reviewCount
+        : 0;
+
+      doctor.reviewCount = reviewCount;
+      doctor.averageRating = averageRating;
+
+      doctorReviewsStore.set(String(doctor.id), {
+        name: formatDoctorName(doctor.profiles?.full_name),
+        reviews: doctorReviews,
+        reviewCount,
+        averageRating
+      });
+    });
+
+    list.innerHTML = doctors.map(doctor => {
+      const name = formatDoctorName(doctor.profiles?.full_name);
+      const initials = getDoctorInitials(doctor.profiles?.full_name);
+
+      const photoMarkup = doctor.photo_url
+        ? `
+          <div class="relative w-20 h-20 shrink-0">
+            <img
+              src="${doctor.photo_url}"
+              alt="عکس ${name}"
+              loading="lazy"
+              class="w-20 h-20 rounded-full object-cover border-4 border-mist shadow-sm"
+              onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');"
+            >
+
+            <div class="hidden w-20 h-20 rounded-full bg-mist items-center justify-center text-xl font-extrabold text-forest">
+              ${initials}
+            </div>
+          </div>
+        `
+        : `
+          <div class="w-20 h-20 rounded-full bg-mist flex items-center justify-center text-xl font-extrabold text-forest shrink-0">
+            ${initials}
+          </div>
+        `;
+
+      return `
+        <article
+          data-doctor-card="${doctor.id}"
+          class="card-select doctor-card bg-white border border-ink/10 rounded-2xl p-5 transition-all"
+        >
+          <div class="flex items-start gap-4">
+            ${photoMarkup}
+
+            <div class="min-w-0 flex-1 text-right">
+              <h3 class="font-extrabold text-forestDark">
+                ${name}
+              </h3>
+
+              <p class="text-xs text-forest font-bold mt-1">
+                ${doctor.specialty || 'دامپزشک نیک‌پلاس'}
+              </p>
+
+              ${doctor.reviewCount ? `
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <div class="flex items-center gap-0.5 text-sm" dir="ltr">
+                    ${renderReviewStars(doctor.averageRating)}
+                  </div>
+
+                  <span class="text-xs font-extrabold text-forestDark">
+                    ${doctor.averageRating.toFixed(1)}
+                  </span>
+
+                  <span class="text-[11px] text-ink/40">
+                    از ${doctor.reviewCount} نظر
+                  </span>
+                </div>
+              ` : `
+                <p class="text-[11px] text-ink/35 mt-2">
+                  هنوز نظری ثبت نشده است.
+                </p>
+              `}
+            </div>
+          </div>
+
+          ${doctor.bio ? `
+            <p class="text-xs text-ink/50 leading-6 mt-4 text-right">
+              ${doctor.bio}
+            </p>
+          ` : ''}
+
+          <div class="grid ${doctor.reviewCount ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mt-4">
+            <button
+              type="button"
+              data-select-doctor="${doctor.id}"
+              class="select-doctor-btn bg-forest hover:bg-forestDark text-white text-xs font-bold px-4 py-3 rounded-xl transition-colors"
+            >
+              انتخاب این پزشک
+            </button>
+
+            ${doctor.reviewCount ? `
+              <button
+                type="button"
+                data-view-doctor-reviews="${doctor.id}"
+                class="view-doctor-reviews-btn bg-mist hover:bg-forest hover:text-white text-forest text-xs font-bold px-4 py-3 rounded-xl transition-colors"
+              >
+                مشاهده نظرات
+              </button>
+            ` : ''}
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.select-doctor-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        selectedDoctor = doctors.find(doctor => String(doctor.id) === String(button.dataset.selectDoctor));
+
+        list.querySelectorAll('.doctor-card').forEach(card => {
+          card.classList.remove('selected');
+        });
+
+        const selectedCard = list.querySelector(`[data-doctor-card="${button.dataset.selectDoctor}"]`);
+        selectedCard?.classList.add('selected');
+
         setTimeout(() => showStep(3), 150);
+      });
+    });
+
+    list.querySelectorAll('.view-doctor-reviews-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        openDoctorReviewsModal(button.dataset.viewDoctorReviews);
       });
     });
   }
@@ -332,9 +610,49 @@
   // ---------- STEP 4: summary + submit ----------
   function buildSummary() {
     const box = document.getElementById('summaryBox');
+    const doctorName = formatDoctorName(selectedDoctor.profiles?.full_name);
+    const doctorInitials = getDoctorInitials(selectedDoctor.profiles?.full_name);
+
+    const summaryPhoto = selectedDoctor.photo_url
+      ? `
+        <img
+          src="${selectedDoctor.photo_url}"
+          alt="عکس ${doctorName}"
+          class="w-16 h-16 rounded-full object-cover border-4 border-mist shrink-0"
+          onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('flex');"
+        >
+        <div class="hidden w-16 h-16 rounded-full bg-mist items-center justify-center text-lg font-extrabold text-forest shrink-0">
+          ${doctorInitials}
+        </div>
+      `
+      : `
+        <div class="w-16 h-16 rounded-full bg-mist flex items-center justify-center text-lg font-extrabold text-forest shrink-0">
+          ${doctorInitials}
+        </div>
+      `;
+
     box.innerHTML = `
+      <div class="flex items-center gap-4 pb-4 mb-4 border-b border-ink/[0.06]">
+        ${summaryPhoto}
+
+        <div>
+          <p class="font-extrabold text-forestDark">${doctorName}</p>
+          <p class="text-xs text-forest font-bold mt-1">${selectedDoctor.specialty || 'دامپزشک نیک‌پلاس'}</p>
+
+          ${selectedDoctor.reviewCount ? `
+            <div class="flex items-center gap-2 mt-1.5">
+              <div class="flex items-center gap-0.5 text-xs" dir="ltr">
+                ${renderReviewStars(selectedDoctor.averageRating)}
+              </div>
+              <span class="text-[11px] text-ink/45">
+                ${selectedDoctor.averageRating.toFixed(1)} از ${selectedDoctor.reviewCount} نظر
+              </span>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
       <p><span class="text-ink/40">خدمت:</span> <span class="font-bold">${selectedService.title}</span></p>
-      <p><span class="text-ink/40">دامپزشک:</span> <span class="font-bold">دکتر ${selectedDoctor.profiles?.full_name ?? ''}</span></p>
       <p><span class="text-ink/40">تاریخ:</span> <span class="font-bold">${JalaliUtil.formatJalaliDisplay(selectedDate, true)}</span></p>
       <p><span class="text-ink/40">ساعت:</span> <span class="font-bold">${selectedTime}</span></p>
     `;
