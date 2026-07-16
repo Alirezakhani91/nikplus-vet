@@ -38,6 +38,10 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .filter-tab.active { background: #1F5C52; color: white; }
+  .application-filter-tab.active { background: #1F5C52; color: white; }
+  .application-card { transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+  .application-card:hover { transform: translateY(-2px); }
+  .modal-open { overflow: hidden; }
 </style>
 </head>
 <body class="bg-cream text-ink antialiased min-h-screen">
@@ -79,6 +83,94 @@
 
   <h1 class="text-2xl font-extrabold text-forestDark mb-1">مدیریت نوبت‌ها</h1>
   <p id="subtitle" class="text-sm text-ink/45 mb-8"></p>
+
+  <!-- درخواست‌های ثبت‌نام دامپزشکان: فقط برای ادمین -->
+  <section id="doctorApplicationsSection" class="hidden bg-white rounded-[2rem] border border-ink/[0.06] p-6 sm:p-7 mb-10">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 mb-6">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="w-11 h-11 rounded-2xl bg-mist text-forest flex items-center justify-center shrink-0">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 3h6"/>
+              <path d="M10 3v5.2a4 4 0 0 0 8 0V6"/>
+              <path d="M18 6h2"/>
+              <path d="M6 8v3a6 6 0 0 0 12 0"/>
+              <path d="M12 17v4"/>
+              <path d="M9 21h6"/>
+            </svg>
+          </span>
+
+          <div>
+            <h2 class="text-lg font-extrabold text-forestDark">درخواست‌های ثبت‌نام دامپزشکان</h2>
+            <p class="text-sm text-ink/45 mt-1 leading-6">
+              اطلاعات حرفه‌ای متقاضی را بررسی و درخواست را تأیید یا رد کنید.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <button
+        id="refreshDoctorApplicationsBtn"
+        type="button"
+        class="self-start inline-flex items-center gap-2 bg-mist hover:bg-forest hover:text-white text-forest text-xs font-bold px-4 py-2.5 rounded-xl transition-colors"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+          <path d="M20 11a8 8 0 1 0-2.3 5.7"/>
+          <path d="M20 4v7h-7"/>
+        </svg>
+        تازه‌سازی
+      </button>
+    </div>
+
+    <!-- counters -->
+    <div class="grid grid-cols-3 gap-3 mb-6">
+      <div class="rounded-2xl bg-amber-50 border border-amber-100 px-4 py-4 text-center">
+        <p id="pendingApplicationsCount" class="text-xl font-extrabold text-amber-700">۰</p>
+        <p class="text-[11px] text-amber-700/70 mt-1">در انتظار بررسی</p>
+      </div>
+
+      <div class="rounded-2xl bg-mist border border-sage/20 px-4 py-4 text-center">
+        <p id="approvedApplicationsCount" class="text-xl font-extrabold text-forest">۰</p>
+        <p class="text-[11px] text-forest/65 mt-1">تأییدشده</p>
+      </div>
+
+      <div class="rounded-2xl bg-red-50 border border-red-100 px-4 py-4 text-center">
+        <p id="rejectedApplicationsCount" class="text-xl font-extrabold text-red-600">۰</p>
+        <p class="text-[11px] text-red-600/65 mt-1">ردشده</p>
+      </div>
+    </div>
+
+    <!-- filters -->
+    <div class="flex flex-wrap gap-2 mb-6">
+      <button data-application-filter="pending" class="application-filter-tab active px-4 py-2 rounded-xl text-xs font-bold bg-mist text-ink/60 transition-colors">
+        در انتظار بررسی
+      </button>
+      <button data-application-filter="approved" class="application-filter-tab px-4 py-2 rounded-xl text-xs font-bold bg-mist text-ink/60 transition-colors">
+        تأییدشده
+      </button>
+      <button data-application-filter="rejected" class="application-filter-tab px-4 py-2 rounded-xl text-xs font-bold bg-mist text-ink/60 transition-colors">
+        ردشده
+      </button>
+      <button data-application-filter="all" class="application-filter-tab px-4 py-2 rounded-xl text-xs font-bold bg-mist text-ink/60 transition-colors">
+        همه درخواست‌ها
+      </button>
+    </div>
+
+    <div id="doctorApplicationsLoading" class="hidden py-10 text-center">
+      <div class="spinner mx-auto"></div>
+      <p class="text-xs text-ink/40 mt-3">در حال دریافت درخواست‌ها...</p>
+    </div>
+
+    <div id="doctorApplicationsList" class="space-y-4"></div>
+
+    <p id="doctorApplicationsEmpty" class="hidden text-center text-sm text-ink/40 py-12 bg-cream/70 rounded-2xl">
+      درخواستی در این دسته وجود ندارد.
+    </p>
+
+    <p id="doctorApplicationsError" role="alert" class="hidden text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3 mt-4 leading-6"></p>
+
+    <p id="doctorApplicationsSuccess" class="hidden text-sm text-forest bg-mist rounded-xl px-4 py-3 mt-4 leading-6"></p>
+  </section>
 
 
   <!-- عکس پروفایل پزشک -->
@@ -200,6 +292,68 @@
 
 </main>
 
+<!-- پنجره رد درخواست دامپزشک -->
+<div id="rejectDoctorApplicationModal" class="hidden fixed inset-0 z-[80] bg-ink/50 backdrop-blur-sm items-center justify-center px-4 py-6">
+  <div class="w-full max-w-lg bg-white rounded-[2rem] border border-ink/[0.06] shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between gap-4 px-6 py-5 border-b border-ink/[0.06]">
+      <div>
+        <h3 class="text-lg font-extrabold text-forestDark">رد درخواست دامپزشک</h3>
+        <p id="rejectDoctorApplicationName" class="text-xs text-ink/45 mt-1"></p>
+      </div>
+
+      <button
+        id="closeRejectDoctorApplicationModalBtn"
+        type="button"
+        class="w-10 h-10 rounded-full bg-mist text-forest hover:bg-forest hover:text-white transition-colors flex items-center justify-center"
+        aria-label="بستن پنجره"
+      >
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="p-6">
+      <label for="doctorApplicationRejectionReason" class="block text-sm font-bold text-forestDark mb-2">
+        دلیل رد درخواست
+      </label>
+
+      <textarea
+        id="doctorApplicationRejectionReason"
+        rows="5"
+        maxlength="500"
+        placeholder="دلیل رد درخواست را واضح و محترمانه بنویسید..."
+        class="w-full px-4 py-3 rounded-xl border border-ink/10 focus:border-forest focus:ring-2 focus:ring-forest/15 outline-none text-sm resize-y leading-7"
+      ></textarea>
+
+      <div class="flex items-center justify-between gap-3 mt-2">
+        <p class="text-[11px] text-ink/40">حداقل ۵ و حداکثر ۵۰۰ کاراکتر</p>
+        <p id="rejectionReasonCounter" class="text-[11px] text-ink/40">۰ / ۵۰۰</p>
+      </div>
+
+      <p id="rejectDoctorApplicationError" role="alert" class="hidden text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3 mt-4 leading-6"></p>
+
+      <div class="flex gap-3 mt-6">
+        <button
+          id="cancelRejectDoctorApplicationBtn"
+          type="button"
+          class="flex-1 border border-ink/10 hover:border-forest text-ink/60 hover:text-forest font-bold py-3 rounded-xl transition-colors"
+        >
+          انصراف
+        </button>
+
+        <button
+          id="confirmRejectDoctorApplicationBtn"
+          type="button"
+          class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+        >
+          <span>تأیید رد درخواست</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="supabase-client.js"></script>
 <script src="jalali.js"></script>
 <script>
@@ -207,12 +361,538 @@
   let currentFilter = 'all';
   let myRole = null;
 
+  let allDoctorApplications = [];
+  let currentDoctorApplicationFilter = 'pending';
+  let selectedDoctorApplicationForRejection = null;
+
+  const doctorApplicationStatusMap = {
+    pending: {
+      label: 'در انتظار بررسی',
+      classes: 'bg-amber-50 text-amber-700 border border-amber-100'
+    },
+    approved: {
+      label: 'تأییدشده',
+      classes: 'bg-mist text-forest border border-sage/20'
+    },
+    rejected: {
+      label: 'ردشده',
+      classes: 'bg-red-50 text-red-600 border border-red-100'
+    }
+  };
+
   const statusMap = {
     pending:   { label: 'در انتظار تایید', classes: 'bg-amber-50 text-amber-700' },
     confirmed: { label: 'تایید شده',       classes: 'bg-mist text-forest' },
     completed: { label: 'انجام شده',       classes: 'bg-ink/[0.06] text-ink/50' },
     cancelled: { label: 'لغو شده',         classes: 'bg-red-50 text-red-600' },
   };
+
+  // ---------------- درخواست‌های ثبت‌نام دامپزشکان ----------------
+  function escapeApplicationText(value) {
+    return String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function formatApplicationDate(value) {
+    if (!value) return 'نامشخص';
+
+    try {
+      return new Intl.DateTimeFormat('fa-IR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(new Date(value));
+    } catch {
+      return String(value);
+    }
+  }
+
+  function getDoctorApplicationServices(application) {
+    return (application.doctor_application_services || [])
+      .map(row => row.services?.title)
+      .filter(Boolean);
+  }
+
+  function updateDoctorApplicationCounters() {
+    const pending = allDoctorApplications.filter(item => item.status === 'pending').length;
+    const approved = allDoctorApplications.filter(item => item.status === 'approved').length;
+    const rejected = allDoctorApplications.filter(item => item.status === 'rejected').length;
+
+    document.getElementById('pendingApplicationsCount').textContent =
+      pending.toLocaleString('fa-IR');
+
+    document.getElementById('approvedApplicationsCount').textContent =
+      approved.toLocaleString('fa-IR');
+
+    document.getElementById('rejectedApplicationsCount').textContent =
+      rejected.toLocaleString('fa-IR');
+  }
+
+  function resetDoctorApplicationMessages() {
+    ['doctorApplicationsError', 'doctorApplicationsSuccess'].forEach(id => {
+      const box = document.getElementById(id);
+      box.textContent = '';
+      box.classList.add('hidden');
+    });
+  }
+
+  function renderDoctorApplications() {
+    const list = document.getElementById('doctorApplicationsList');
+    const empty = document.getElementById('doctorApplicationsEmpty');
+
+    const filtered = currentDoctorApplicationFilter === 'all'
+      ? allDoctorApplications
+      : allDoctorApplications.filter(
+          item => item.status === currentDoctorApplicationFilter
+        );
+
+    updateDoctorApplicationCounters();
+
+    if (!filtered.length) {
+      list.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+
+    empty.classList.add('hidden');
+
+    list.innerHTML = filtered.map(application => {
+      const status =
+        doctorApplicationStatusMap[application.status] ||
+        {
+          label: application.status || 'نامشخص',
+          classes: 'bg-ink/[0.06] text-ink/50'
+        };
+
+      const services = getDoctorApplicationServices(application);
+
+      const workplace = application.workplace_name
+        ? `
+          <div>
+            <p class="text-[11px] text-ink/35 font-bold">محل فعالیت</p>
+            <p class="text-sm text-ink/65 mt-1">${escapeApplicationText(application.workplace_name)}</p>
+          </div>
+        `
+        : '';
+
+      const bio = application.bio
+        ? `
+          <div class="mt-5 pt-5 border-t border-ink/[0.06]">
+            <p class="text-[11px] text-ink/35 font-bold mb-2">معرفی حرفه‌ای</p>
+            <p class="text-sm text-ink/60 leading-7 whitespace-pre-line">${escapeApplicationText(application.bio)}</p>
+          </div>
+        `
+        : '';
+
+      const rejectionReason = application.status === 'rejected'
+        ? `
+          <div class="mt-5 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            <p class="text-[11px] font-bold text-red-600 mb-1">دلیل رد درخواست</p>
+            <p class="text-sm text-red-600/85 leading-7">${escapeApplicationText(application.rejection_reason || 'دلیلی ثبت نشده است.')}</p>
+          </div>
+        `
+        : '';
+
+      const actions = application.status === 'pending'
+        ? `
+          <div class="flex flex-col sm:flex-row gap-2.5 mt-6 pt-5 border-t border-ink/[0.06]">
+            <button
+              type="button"
+              data-approve-doctor-application="${application.id}"
+              class="approve-doctor-application-btn flex-1 bg-forest hover:bg-forestDark text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+              تأیید و فعال‌سازی دامپزشک
+            </button>
+
+            <button
+              type="button"
+              data-reject-doctor-application="${application.id}"
+              class="reject-doctor-application-btn flex-1 bg-red-50 hover:bg-red-600 hover:text-white text-red-600 text-sm font-bold px-5 py-3 rounded-xl transition-colors"
+            >
+              رد درخواست
+            </button>
+          </div>
+        `
+        : `
+          <div class="mt-5 pt-4 border-t border-ink/[0.06] text-[11px] text-ink/35">
+            بررسی‌شده در ${formatApplicationDate(application.reviewed_at)}
+          </div>
+        `;
+
+      return `
+        <article class="application-card bg-cream/55 hover:bg-white rounded-2xl border border-ink/[0.06] hover:border-forest/15 p-5 sm:p-6">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <h3 class="text-lg font-extrabold text-forestDark">
+                  ${escapeApplicationText(application.full_name)}
+                </h3>
+
+                <span class="text-[11px] font-bold px-2.5 py-1 rounded-full ${status.classes}">
+                  ${status.label}
+                </span>
+              </div>
+
+              <p class="text-sm font-bold text-forest mt-2">
+                ${escapeApplicationText(application.specialty)}
+              </p>
+            </div>
+
+            <div class="text-right sm:text-left">
+              <p class="text-[11px] text-ink/35">زمان ارسال</p>
+              <p class="text-xs text-ink/50 mt-1">${formatApplicationDate(application.submitted_at)}</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5 bg-white/75 border border-ink/[0.05] rounded-2xl p-4">
+            <div>
+              <p class="text-[11px] text-ink/35 font-bold">شماره موبایل</p>
+              <p class="text-sm text-ink/65 mt-1" dir="ltr">${escapeApplicationText(application.phone)}</p>
+            </div>
+
+            <div>
+              <p class="text-[11px] text-ink/35 font-bold">شماره نظام دامپزشکی</p>
+              <p class="text-sm text-ink/65 mt-1" dir="ltr">${escapeApplicationText(application.license_number)}</p>
+            </div>
+
+            <div>
+              <p class="text-[11px] text-ink/35 font-bold">سابقه فعالیت</p>
+              <p class="text-sm text-ink/65 mt-1">${Number(application.experience_years || 0).toLocaleString('fa-IR')} سال</p>
+            </div>
+
+            <div>
+              <p class="text-[11px] text-ink/35 font-bold">شهر</p>
+              <p class="text-sm text-ink/65 mt-1">${escapeApplicationText(application.city)}</p>
+            </div>
+
+            ${workplace}
+          </div>
+
+          <div class="mt-5">
+            <p class="text-[11px] text-ink/35 font-bold mb-2">خدمات انتخاب‌شده</p>
+
+            <div class="flex flex-wrap gap-2">
+              ${
+                services.length
+                  ? services.map(title => `
+                      <span class="text-[11px] font-bold text-forest bg-mist px-3 py-1.5 rounded-full">
+                        ${escapeApplicationText(title)}
+                      </span>
+                    `).join('')
+                  : `
+                    <span class="text-xs text-ink/35">
+                      خدمتی ثبت نشده است.
+                    </span>
+                  `
+              }
+            </div>
+          </div>
+
+          ${bio}
+          ${rejectionReason}
+          ${actions}
+        </article>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.approve-doctor-application-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        approveDoctorApplication(
+          button.dataset.approveDoctorApplication,
+          button
+        );
+      });
+    });
+
+    list.querySelectorAll('.reject-doctor-application-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        openRejectDoctorApplicationModal(
+          button.dataset.rejectDoctorApplication
+        );
+      });
+    });
+  }
+
+  async function loadDoctorApplications() {
+    const loading = document.getElementById('doctorApplicationsLoading');
+    const errorBox = document.getElementById('doctorApplicationsError');
+
+    resetDoctorApplicationMessages();
+    loading.classList.remove('hidden');
+
+    const { data, error } = await supabaseClient
+      .from('doctor_applications')
+      .select(`
+        id,
+        user_id,
+        full_name,
+        phone,
+        license_number,
+        specialty,
+        experience_years,
+        city,
+        workplace_name,
+        bio,
+        status,
+        rejection_reason,
+        submitted_at,
+        reviewed_at,
+        doctor_application_services (
+          service_id,
+          services ( title )
+        )
+      `)
+      .order('submitted_at', { ascending: false });
+
+    loading.classList.add('hidden');
+
+    if (error) {
+      console.error('Doctor applications load error:', error);
+      allDoctorApplications = [];
+      renderDoctorApplications();
+
+      errorBox.textContent =
+        'درخواست‌های دامپزشکان دریافت نشد. ابتدا فایل SQL مرحله تأیید و رد را اجرا کنید.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+
+    allDoctorApplications = data || [];
+    renderDoctorApplications();
+  }
+
+  async function approveDoctorApplication(applicationId, button) {
+    const application = allDoctorApplications.find(
+      item => String(item.id) === String(applicationId)
+    );
+
+    if (!application) return;
+
+    const confirmed = window.confirm(
+      `آیا درخواست «${application.full_name}» تأیید شود؟\n\nپس از تأیید، حساب او به دامپزشک فعال تبدیل می‌شود و در پاستیل نمایش داده خواهد شد.`
+    );
+
+    if (!confirmed) return;
+
+    resetDoctorApplicationMessages();
+
+    const originalHtml = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = `
+      <span class="spinner !w-4 !h-4 !border-2 !border-white/30 !border-t-white"></span>
+      در حال تأیید...
+    `;
+
+    const { error } = await supabaseClient.rpc(
+      'approve_doctor_application',
+      {
+        p_application_id: applicationId
+      }
+    );
+
+    button.disabled = false;
+    button.innerHTML = originalHtml;
+
+    if (error) {
+      console.error('Doctor application approval error:', error);
+
+      const errorBox = document.getElementById('doctorApplicationsError');
+      errorBox.textContent = translateDoctorReviewError(error, 'approve');
+      errorBox.classList.remove('hidden');
+      return;
+    }
+
+    const successBox = document.getElementById('doctorApplicationsSuccess');
+    successBox.textContent =
+      `درخواست ${application.full_name} تأیید شد و حساب دامپزشکی او فعال گردید.`;
+    successBox.classList.remove('hidden');
+
+    await loadDoctorApplications();
+  }
+
+  function openRejectDoctorApplicationModal(applicationId) {
+    const application = allDoctorApplications.find(
+      item => String(item.id) === String(applicationId)
+    );
+
+    if (!application) return;
+
+    selectedDoctorApplicationForRejection = application;
+
+    document.getElementById('rejectDoctorApplicationName').textContent =
+      `متقاضی: ${application.full_name}`;
+
+    const textarea = document.getElementById('doctorApplicationRejectionReason');
+    textarea.value = '';
+
+    document.getElementById('rejectionReasonCounter').textContent = '۰ / ۵۰۰';
+    document.getElementById('rejectDoctorApplicationError').textContent = '';
+    document.getElementById('rejectDoctorApplicationError').classList.add('hidden');
+
+    const modal = document.getElementById('rejectDoctorApplicationModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.classList.add('modal-open');
+
+    setTimeout(() => textarea.focus(), 50);
+  }
+
+  function closeRejectDoctorApplicationModal() {
+    const modal = document.getElementById('rejectDoctorApplicationModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.classList.remove('modal-open');
+
+    selectedDoctorApplicationForRejection = null;
+  }
+
+  async function confirmRejectDoctorApplication() {
+    if (!selectedDoctorApplicationForRejection) return;
+
+    const reasonInput = document.getElementById(
+      'doctorApplicationRejectionReason'
+    );
+
+    const reason = reasonInput.value.trim();
+    const errorBox = document.getElementById('rejectDoctorApplicationError');
+    const button = document.getElementById('confirmRejectDoctorApplicationBtn');
+
+    errorBox.textContent = '';
+    errorBox.classList.add('hidden');
+
+    if (reason.length < 5) {
+      errorBox.textContent = 'دلیل رد درخواست باید حداقل ۵ کاراکتر داشته باشد.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+
+    const application = selectedDoctorApplicationForRejection;
+    const originalHtml = button.innerHTML;
+
+    button.disabled = true;
+    button.innerHTML = `
+      <span class="spinner !w-4 !h-4 !border-2 !border-white/30 !border-t-white"></span>
+      در حال ثبت...
+    `;
+
+    const { error } = await supabaseClient.rpc(
+      'reject_doctor_application',
+      {
+        p_application_id: application.id,
+        p_rejection_reason: reason
+      }
+    );
+
+    button.disabled = false;
+    button.innerHTML = originalHtml;
+
+    if (error) {
+      console.error('Doctor application rejection error:', error);
+      errorBox.textContent = translateDoctorReviewError(error, 'reject');
+      errorBox.classList.remove('hidden');
+      return;
+    }
+
+    closeRejectDoctorApplicationModal();
+
+    const successBox = document.getElementById('doctorApplicationsSuccess');
+    successBox.textContent =
+      `درخواست ${application.full_name} رد شد و دلیل آن ثبت گردید.`;
+    successBox.classList.remove('hidden');
+
+    await loadDoctorApplications();
+  }
+
+  function translateDoctorReviewError(error, action) {
+    const message = String(error?.message || '');
+
+    if (message.includes('ADMIN_ONLY')) {
+      return 'فقط مدیر پاستیل اجازه انجام این عملیات را دارد.';
+    }
+
+    if (message.includes('APPLICATION_NOT_FOUND')) {
+      return 'این درخواست پیدا نشد یا حذف شده است.';
+    }
+
+    if (message.includes('APPLICATION_NOT_PENDING')) {
+      return 'این درخواست قبلاً بررسی شده است.';
+    }
+
+    if (message.includes('REJECTION_REASON_REQUIRED')) {
+      return 'دلیل رد درخواست را کامل وارد کنید.';
+    }
+
+    if (message.includes('LICENSE_ALREADY_ACTIVE')) {
+      return 'این شماره نظام دامپزشکی برای یک دامپزشک فعال دیگر ثبت شده است.';
+    }
+
+    return action === 'approve'
+      ? 'تأیید درخواست انجام نشد. لطفاً دوباره تلاش کنید.'
+      : 'رد درخواست انجام نشد. لطفاً دوباره تلاش کنید.';
+  }
+
+  document.querySelectorAll('.application-filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.application-filter-tab').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      tab.classList.add('active');
+      currentDoctorApplicationFilter = tab.dataset.applicationFilter;
+      renderDoctorApplications();
+    });
+  });
+
+  document.getElementById('refreshDoctorApplicationsBtn').addEventListener(
+    'click',
+    loadDoctorApplications
+  );
+
+  document.getElementById('closeRejectDoctorApplicationModalBtn').addEventListener(
+    'click',
+    closeRejectDoctorApplicationModal
+  );
+
+  document.getElementById('cancelRejectDoctorApplicationBtn').addEventListener(
+    'click',
+    closeRejectDoctorApplicationModal
+  );
+
+  document.getElementById('confirmRejectDoctorApplicationBtn').addEventListener(
+    'click',
+    confirmRejectDoctorApplication
+  );
+
+  document.getElementById('rejectDoctorApplicationModal').addEventListener(
+    'click',
+    event => {
+      if (event.target.id === 'rejectDoctorApplicationModal') {
+        closeRejectDoctorApplicationModal();
+      }
+    }
+  );
+
+  document.getElementById('doctorApplicationRejectionReason').addEventListener(
+    'input',
+    event => {
+      const length = event.target.value.length;
+
+      document.getElementById('rejectionReasonCounter').textContent =
+        `${length.toLocaleString('fa-IR')} / ۵۰۰`;
+
+      document.getElementById('rejectDoctorApplicationError').textContent = '';
+      document.getElementById('rejectDoctorApplicationError').classList.add('hidden');
+    }
+  );
 
   function formatDate(dateStr) {
     return JalaliUtil.formatJalaliDisplay(dateStr, true);
@@ -785,6 +1465,11 @@
     document.getElementById('subtitle').textContent = myRole === 'admin'
       ? 'مشاهده و مدیریت همه نوبت‌های ثبت‌شده در پلتفرم'
       : 'مشاهده و مدیریت نوبت‌های مربوط به شما';
+
+    if (myRole === 'admin') {
+      document.getElementById('doctorApplicationsSection').classList.remove('hidden');
+      await loadDoctorApplications();
+    }
 
     if (myRole === 'doctor') {
       document.getElementById('doctorPhotoSection').classList.remove('hidden');
