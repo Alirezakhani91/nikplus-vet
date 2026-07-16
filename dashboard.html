@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>داشبورد کاربری | نیک‌پلاس</title>
+<title>داشبورد کاربری | پاستیل</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,7 +52,7 @@
         <circle cx="19.5" cy="11.5" r="2.1" fill="#1F5C52"/>
         <circle cx="25.5" cy="14" r="2.1" fill="#1F5C52"/>
       </svg>
-      <span class="text-lg font-extrabold tracking-tight text-forestDark">نیک‌پلاس</span>
+      <span class="text-lg font-extrabold tracking-tight text-forestDark">پاستیل</span>
     </a>
     <button id="logoutBtn" class="flex items-center gap-2 text-sm font-bold text-ink/60 hover:text-red-600 transition-colors">
       خروج از حساب
@@ -610,7 +610,7 @@
     }
 
     const existingReview = currentReviews.get(String(appointmentId));
-    const doctorName = reviewingAppointment.doctors?.profiles?.full_name || 'پزشک نیک‌پلاس';
+    const doctorName = reviewingAppointment.doctors?.profiles?.full_name || 'پزشک';
 
     selectedReviewRating = existingReview?.rating || 0;
 
