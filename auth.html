@@ -288,7 +288,7 @@ tailwind.config = {
         </form>
 
         <!-- Doctor Multi-Step Form -->
-        <form id="doctorForm" class="hidden">
+        <form id="doctorForm" class="hidden" novalidate>
           <button type="button" class="backToChooser text-xs font-bold text-forest hover:text-forestDark mb-5">
             ← بازگشت به انتخاب نوع ثبت‌نام
           </button>
@@ -413,7 +413,7 @@ tailwind.config = {
               مرحله بعد
             </button>
 
-            <button type="submit" id="doctorSubmitBtn" class="hidden flex-1 bg-forest hover:bg-forestDark text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-forest/20 items-center justify-center gap-2">
+            <button type="button" id="doctorSubmitBtn" class="hidden flex-1 bg-forest hover:bg-forestDark text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-forest/20 items-center justify-center gap-2 touch-manipulation">
               <span>ارسال درخواست دامپزشک</span>
             </button>
           </div>
@@ -1043,97 +1043,181 @@ tailwind.config = {
   }
 
   // ---------- Doctor Signup ----------
-  doctorForm.addEventListener('submit', async event => {
-    event.preventDefault();
-
+  function showDoctorFormError(message) {
     const errorBox = document.getElementById('doctorError');
+
+    errorBox.textContent = message;
+    errorBox.classList.remove('hidden');
+
+    requestAnimationFrame(() => {
+      errorBox.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    });
+  }
+
+  async function submitDoctorApplication() {
+    const errorBox = document.getElementById('doctorError');
+    const button = document.getElementById('doctorSubmitBtn');
+
+    // جلوگیری از لمس یا ارسال چندباره در موبایل
+    if (button.disabled) return;
+
     errorBox.textContent = '';
     errorBox.classList.add('hidden');
 
-    if (!validateDoctorStep(1) || !validateDoctorStep(2)) {
+    // همه مراحل دوباره با اعتبارسنجی اختصاصی بررسی می‌شوند.
+    if (!validateDoctorStep(1)) {
+      setDoctorStep(1);
+      showDoctorFormError(
+        document.getElementById('doctorError').textContent ||
+        'اطلاعات مرحله حساب را کامل کنید.'
+      );
       return;
     }
+
+    if (!validateDoctorStep(2)) {
+      setDoctorStep(2);
+      showDoctorFormError(
+        document.getElementById('doctorError').textContent ||
+        'اطلاعات حرفه‌ای را کامل کنید.'
+      );
+      return;
+    }
+
+    // پس از اعتبارسنجی مراحل قبلی، دوباره به مرحله آخر برمی‌گردیم.
+    setDoctorStep(3);
 
     const serviceIds = [
       ...document.querySelectorAll('.service-checkbox:checked')
     ].map(checkbox => checkbox.value);
 
+    if (!doctorServicesLoaded) {
+      showDoctorFormError(
+        'خدمات هنوز کامل بارگذاری نشده‌اند. چند لحظه صبر کنید و دوباره بزنید.'
+      );
+      return;
+    }
+
     if (!serviceIds.length) {
-      errorBox.textContent = 'حداقل یک خدمت را انتخاب کنید.';
-      errorBox.classList.remove('hidden');
+      showDoctorFormError('حداقل یک خدمت را انتخاب کنید.');
       return;
     }
 
-    if (!document.getElementById('doctorAccuracyConfirm').checked) {
-      errorBox.textContent = 'برای ارسال درخواست باید صحت اطلاعات را تأیید کنید.';
-      errorBox.classList.remove('hidden');
+    const accuracyConfirm =
+      document.getElementById('doctorAccuracyConfirm');
+
+    if (!accuracyConfirm.checked) {
+      showDoctorFormError(
+        'برای ارسال درخواست باید صحت اطلاعات را تأیید کنید.'
+      );
+
+      accuracyConfirm.focus({ preventScroll: true });
       return;
     }
 
-    const fullName = document.getElementById('doctorName').value.trim();
+    const fullName =
+      document.getElementById('doctorName').value.trim();
+
     const normalizedPhone = normalizeIranMobile(
       document.getElementById('doctorPhone').value
     );
-    const password = document.getElementById('doctorPassword').value;
-    const button = document.getElementById('doctorSubmitBtn');
+
+    const password =
+      document.getElementById('doctorPassword').value;
 
     setLoading(button, true);
 
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: phoneToInternalEmail(normalizedPhone),
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone: normalizedPhone.local,
-          registration_type: 'doctor_application',
-          login_method: 'mobile_password'
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: phoneToInternalEmail(normalizedPhone),
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone: normalizedPhone.local,
+            registration_type: 'doctor_application',
+            login_method: 'mobile_password'
+          }
         }
+      });
+
+      if (error) {
+        setLoading(button, false, 'ارسال درخواست دامپزشک');
+        showDoctorFormError(
+          translateAuthError(error, 'signup')
+        );
+        return;
       }
-    });
 
-    if (error) {
-      setLoading(button, false, 'ارسال درخواست دامپزشک');
-      errorBox.textContent = translateAuthError(error, 'signup');
-      errorBox.classList.remove('hidden');
-      return;
-    }
-
-    if (!data?.session) {
-      setLoading(button, false, 'ارسال درخواست دامپزشک');
-      errorBox.textContent = 'حساب ساخته شد اما ورود خودکار فعال نیست. گزینه Confirm email را در Supabase خاموش کنید.';
-      errorBox.classList.remove('hidden');
-      return;
-    }
-
-    const { error: applicationError } = await supabaseClient.rpc(
-      'submit_doctor_application',
-      {
-        p_full_name: fullName,
-        p_phone: normalizedPhone.local,
-        p_license_number: document.getElementById('doctorLicenseNumber').value.trim(),
-        p_specialty: document.getElementById('doctorSpecialty').value.trim(),
-        p_experience_years: Number(document.getElementById('doctorExperienceYears').value),
-        p_city: document.getElementById('doctorCity').value.trim(),
-        p_workplace_name: document.getElementById('doctorWorkplaceName').value.trim(),
-        p_bio: document.getElementById('doctorBio').value.trim(),
-        p_service_ids: serviceIds
+      if (!data?.session) {
+        setLoading(button, false, 'ارسال درخواست دامپزشک');
+        showDoctorFormError(
+          'حساب ساخته شد اما ورود خودکار فعال نیست. گزینه Confirm email را در Supabase خاموش کنید.'
+        );
+        return;
       }
-    );
 
-    setLoading(button, false, 'ارسال درخواست دامپزشک');
+      const { error: applicationError } = await supabaseClient.rpc(
+        'submit_doctor_application',
+        {
+          p_full_name: fullName,
+          p_phone: normalizedPhone.local,
+          p_license_number:
+            document.getElementById('doctorLicenseNumber').value.trim(),
+          p_specialty:
+            document.getElementById('doctorSpecialty').value.trim(),
+          p_experience_years:
+            Number(document.getElementById('doctorExperienceYears').value),
+          p_city:
+            document.getElementById('doctorCity').value.trim(),
+          p_workplace_name:
+            document.getElementById('doctorWorkplaceName').value.trim(),
+          p_bio:
+            document.getElementById('doctorBio').value.trim(),
+          p_service_ids: serviceIds
+        }
+      );
 
-    if (applicationError) {
-      errorBox.textContent = translateDoctorApplicationError(applicationError);
-      errorBox.classList.remove('hidden');
-      console.error(applicationError);
-      return;
+      setLoading(button, false, 'ارسال درخواست دامپزشک');
+
+      if (applicationError) {
+        console.error(applicationError);
+        showDoctorFormError(
+          translateDoctorApplicationError(applicationError)
+        );
+        return;
+      }
+
+      await supabaseClient.auth.signOut();
+
+      doctorForm.classList.add('hidden');
+      doctorSuccessPanel.classList.remove('hidden');
+
+      doctorSuccessPanel.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+
+    } catch (unexpectedError) {
+      console.error('Unexpected doctor signup error:', unexpectedError);
+
+      setLoading(button, false, 'ارسال درخواست دامپزشک');
+
+      showDoctorFormError(
+        'ارتباط با سرور انجام نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید.'
+      );
     }
+  }
 
-    await supabaseClient.auth.signOut();
+  // لمس و کلیک موبایل مستقیماً این تابع را اجرا می‌کند.
+  doctorSubmitBtn.addEventListener('click', submitDoctorApplication);
 
-    doctorForm.classList.add('hidden');
-    doctorSuccessPanel.classList.remove('hidden');
+  // برای ارسال با کلید Enter و دسترس‌پذیری فرم.
+  doctorForm.addEventListener('submit', event => {
+    event.preventDefault();
+    submitDoctorApplication();
   });
 </script>
 
