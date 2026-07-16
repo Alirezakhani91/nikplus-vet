@@ -395,9 +395,25 @@ tailwind.config = {
             </div>
 
             <label class="flex items-start gap-3 bg-cream/80 border border-ink/[0.06] rounded-2xl p-4 cursor-pointer">
-              <input type="checkbox" id="doctorAccuracyConfirm" required class="mt-1 accent-forest">
-              <span class="text-xs text-ink/60 leading-6">
-                تأیید می‌کنم اطلاعات واردشده صحیح است و می‌دانم حساب دامپزشکی فقط پس از بررسی و تأیید پاستیل فعال می‌شود.
+              <input
+                type="checkbox"
+                id="doctorAccuracyConfirm"
+                required
+                class="mt-1 accent-forest shrink-0"
+                aria-describedby="doctorTermsConfirmationText"
+              >
+
+              <span id="doctorTermsConfirmationText" class="text-xs text-ink/60 leading-6">
+                تأیید می‌کنم اطلاعات واردشده صحیح است و
+                <a
+                  href="terms.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-extrabold text-forest hover:text-forestDark underline underline-offset-4 decoration-forest/35"
+                >
+                  قوانین و مقررات استفاده از پاستیل
+                </a>
+                را مطالعه کرده و می‌پذیرم.
               </span>
             </label>
           </div>
@@ -442,8 +458,17 @@ tailwind.config = {
     </div>
   </div>
 
-  <p class="text-center text-xs text-ink/40 mt-6">
-    با ورود یا ثبت‌نام، قوانین و مقررات پاستیل را می‌پذیرید.
+  <p class="text-center text-xs text-ink/40 mt-6 leading-6">
+    استفاده از پاستیل به‌معنای پذیرش
+    <a
+      href="terms.html"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="font-bold text-forest hover:text-forestDark underline underline-offset-4 decoration-forest/30"
+    >
+      قوانین و مقررات پاستیل
+    </a>
+    است.
   </p>
 </div>
 
@@ -1110,7 +1135,7 @@ tailwind.config = {
 
     if (!accuracyConfirm.checked) {
       showDoctorFormError(
-        'برای ارسال درخواست باید صحت اطلاعات را تأیید کنید.'
+        'برای ارسال درخواست، صحت اطلاعات و پذیرش قوانین و مقررات پاستیل را تأیید کنید.'
       );
 
       accuracyConfirm.focus({ preventScroll: true });
