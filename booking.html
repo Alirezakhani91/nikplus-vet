@@ -415,8 +415,6 @@
       >
         <h3 class="font-bold text-forestDark mb-1">${service.title}</h3>
         <p class="text-xs text-ink/50 leading-6">${service.description ?? ''}</p>
-        <p class="text-xs text-forest font-bold mt-2">
-        </p>
       </button>
     `).join('');
 
@@ -470,7 +468,8 @@
           id,
           specialty,
           bio,
-          photo_url
+          photo_url,
+          appointment_duration_minutes
         )
       `)
       .eq('service_id', serviceId);
@@ -843,23 +842,58 @@
     // نوبت‌های از قبل رزروشده همین دامپزشک در همین تاریخ
     const { data: booked } = await supabaseClient
       .from('appointments')
-      .select('appointment_time')
+      .select('appointment_time, duration_minutes')
       .eq('doctor_id', selectedDoctor.id)
       .eq('appointment_date', selectedDate)
       .neq('status', 'cancelled');
 
-    const bookedTimes = new Set((booked || []).map(b => b.appointment_time?.slice(0, 5)));
+    const slotDurationMinutes =
+      Number(selectedDoctor.appointment_duration_minutes) === 15
+        ? 15
+        : 30;
 
-    // ساخت نوبت‌های نیم‌ساعته در بازه‌های کاری تعریف‌شده برای این تاریخ
+    const bookedIntervals = (booked || [])
+      .filter(item => item.appointment_time)
+      .map(item => {
+        const start = timeToMinutes(
+          item.appointment_time.slice(0, 5)
+        );
+
+        const duration =
+          Number(item.duration_minutes) === 15
+            ? 15
+            : 30;
+
+        return {
+          start,
+          end: start + duration
+        };
+      });
+
+    function doesSlotOverlapBookedAppointment(slotTime) {
+      const slotStart = timeToMinutes(slotTime);
+      const slotEnd = slotStart + slotDurationMinutes;
+
+      return bookedIntervals.some(interval =>
+        slotStart < interval.end &&
+        slotEnd > interval.start
+      );
+    }
+
+    // ساخت بازه‌های نوبت بر اساس انتخاب خود دامپزشک:
+    // ۱۵ دقیقه‌ای یا ۳۰ دقیقه‌ای
     let slots = [];
+
     allWindows.forEach(win => {
       let start = timeToMinutes(win.start_time);
       const end = timeToMinutes(win.end_time);
-      while (start + 30 <= end) {
+
+      while (start + slotDurationMinutes <= end) {
         slots.push(minutesToTime(start));
-        start += 30;
+        start += slotDurationMinutes;
       }
     });
+
     slots = [...new Set(slots)].sort();
 
     if (slots.length === 0) {
@@ -868,7 +902,7 @@
     }
 
     slotsList.innerHTML = slots.map(s => {
-      const isBooked = bookedTimes.has(s);
+      const isBooked = doesSlotOverlapBookedAppointment(s);
       return `
         <button
           data-time="${s}"
@@ -967,6 +1001,10 @@
       pet_name: petName,
       appointment_date: selectedDate,
       appointment_time: selectedTime,
+      duration_minutes:
+        Number(selectedDoctor.appointment_duration_minutes) === 15
+          ? 15
+          : 30,
       status: 'pending',
       notes: notes || null,
     });
