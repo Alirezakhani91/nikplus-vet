@@ -634,6 +634,31 @@
             <p id="homeDoctorSidebarResultCount" class="text-xs font-bold text-forest">
               در حال دریافت دامپزشکان...
             </p>
+
+            <button
+              id="homeDoctorViewResultsBtn"
+              type="button"
+              class="mt-4 w-full inline-flex items-center justify-center gap-2 bg-forest hover:bg-forestDark text-white text-xs font-extrabold px-4 py-3.5 rounded-xl transition-all shadow-lg shadow-forest/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-forest"
+            >
+              <span id="homeDoctorViewResultsBtnLabel">
+                مشاهده دامپزشکان
+              </span>
+
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14"/>
+                <path d="m19 12-7 7-7-7"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -1791,6 +1816,10 @@ function setupHomeDoctorSlider() {
   const serviceFilter = document.getElementById('homeDoctorServiceFilter');
   const sortFilter = document.getElementById('homeDoctorSortFilter');
   const resetButton = document.getElementById('resetHomeDoctorFiltersBtn');
+  const viewResultsButton = document.getElementById('homeDoctorViewResultsBtn');
+  const viewResultsButtonLabel = document.getElementById(
+    'homeDoctorViewResultsBtnLabel'
+  );
 
   const emptyState = document.getElementById('homeDoctorSearchEmpty');
   const container = document.getElementById('doctorsContainer');
@@ -1812,6 +1841,8 @@ function setupHomeDoctorSlider() {
     !serviceFilter ||
     !sortFilter ||
     !resetButton ||
+    !viewResultsButton ||
+    !viewResultsButtonLabel ||
     !emptyState ||
     !container ||
     !prevButton ||
@@ -2009,6 +2040,11 @@ function setupHomeDoctorSlider() {
     mobileResultCount.textContent = countText;
     desktopResultCount.textContent = countText;
 
+    viewResultsButton.disabled = !hasResults;
+    viewResultsButtonLabel.textContent = hasResults
+      ? `مشاهده ${filteredCards.length.toLocaleString('fa-IR')} دامپزشک`
+      : 'نتیجه‌ای برای نمایش نیست';
+
     pageInfo.textContent =
       `صفحه ${(homeDoctorSliderPage + 1).toLocaleString('fa-IR')} از ${totalPages.toLocaleString('fa-IR')}`;
 
@@ -2093,6 +2129,19 @@ function setupHomeDoctorSlider() {
   });
 
   resetButton.addEventListener('click', resetFilters);
+
+  viewResultsButton.addEventListener('click', () => {
+    if (viewResultsButton.disabled) return;
+
+    const doctorsSection = document.getElementById('doctors');
+
+    if (!doctorsSection) return;
+
+    doctorsSection.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  });
 
   window.addEventListener('resize', () => {
     clearTimeout(homeDoctorSliderResizeTimer);
