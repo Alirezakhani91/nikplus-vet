@@ -402,21 +402,13 @@
     }
   }
 
-
-  @media (min-width: 1280px) {
-    .site-wide-header {
-      width: calc(100% + 326px);
-      box-sizing: border-box;
-    }
-  }
-
 </style>
 </head>
 <body class="bg-cream text-ink antialiased selection:bg-lagoon/30">
 
 <!-- ===================== NAVBAR ===================== -->
-<header class="site-wide-header sticky top-0 z-50 bg-cream/85 backdrop-blur-md border-b border-ink/[0.06]">
-  <div class="w-full px-6 lg:px-10 h-20 flex items-center justify-between">
+<header class="sticky top-0 z-50 bg-cream/85 backdrop-blur-md border-b border-ink/[0.06]">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
     <a href="#" class="flex items-center gap-2.5">
       <svg width="34" height="34" viewBox="0 0 64 64" fill="none">
         <circle cx="32" cy="32" r="30.4" stroke="#1F5C52" stroke-width="2.25"/>
@@ -642,31 +634,6 @@
             <p id="homeDoctorSidebarResultCount" class="text-xs font-bold text-forest">
               در حال دریافت دامپزشکان...
             </p>
-
-            <button
-              id="homeDoctorViewResultsBtn"
-              type="button"
-              class="mt-4 w-full inline-flex items-center justify-center gap-2 bg-forest hover:bg-forestDark text-white text-xs font-extrabold px-4 py-3.5 rounded-xl transition-all shadow-lg shadow-forest/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-forest"
-            >
-              <span id="homeDoctorViewResultsBtnLabel">
-                مشاهده دامپزشکان
-              </span>
-
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 5v14"/>
-                <path d="m19 12-7 7-7-7"/>
-              </svg>
-            </button>
           </div>
         </div>
       </div>
@@ -1824,10 +1791,6 @@ function setupHomeDoctorSlider() {
   const serviceFilter = document.getElementById('homeDoctorServiceFilter');
   const sortFilter = document.getElementById('homeDoctorSortFilter');
   const resetButton = document.getElementById('resetHomeDoctorFiltersBtn');
-  const viewResultsButton = document.getElementById('homeDoctorViewResultsBtn');
-  const viewResultsButtonLabel = document.getElementById(
-    'homeDoctorViewResultsBtnLabel'
-  );
 
   const emptyState = document.getElementById('homeDoctorSearchEmpty');
   const container = document.getElementById('doctorsContainer');
@@ -1849,8 +1812,6 @@ function setupHomeDoctorSlider() {
     !serviceFilter ||
     !sortFilter ||
     !resetButton ||
-    !viewResultsButton ||
-    !viewResultsButtonLabel ||
     !emptyState ||
     !container ||
     !prevButton ||
@@ -2048,11 +2009,6 @@ function setupHomeDoctorSlider() {
     mobileResultCount.textContent = countText;
     desktopResultCount.textContent = countText;
 
-    viewResultsButton.disabled = !hasResults;
-    viewResultsButtonLabel.textContent = hasResults
-      ? `مشاهده ${filteredCards.length.toLocaleString('fa-IR')} دامپزشک`
-      : 'نتیجه‌ای برای نمایش نیست';
-
     pageInfo.textContent =
       `صفحه ${(homeDoctorSliderPage + 1).toLocaleString('fa-IR')} از ${totalPages.toLocaleString('fa-IR')}`;
 
@@ -2137,19 +2093,6 @@ function setupHomeDoctorSlider() {
   });
 
   resetButton.addEventListener('click', resetFilters);
-
-  viewResultsButton.addEventListener('click', () => {
-    if (viewResultsButton.disabled) return;
-
-    const doctorsSection = document.getElementById('doctors');
-
-    if (!doctorsSection) return;
-
-    doctorsSection.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  });
 
   window.addEventListener('resize', () => {
     clearTimeout(homeDoctorSliderResizeTimer);
