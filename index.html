@@ -321,6 +321,33 @@
     .doctor-slider-arrow--left { left: -4px; }
   }
 
+
+  .home-doctor-filter-sidebar {
+    box-shadow: 0 18px 55px rgba(31, 92, 82, .07);
+  }
+
+  .home-doctor-filter-select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, #7FA793 50%),
+      linear-gradient(135deg, #7FA793 50%, transparent 50%);
+    background-position:
+      18px calc(50% - 2px),
+      13px calc(50% - 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .home-doctor-filter-chip {
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+  }
+
+  .home-doctor-filter-chip.active {
+    background: #1F5C52;
+    border-color: #1F5C52;
+    color: #ffffff;
+  }
+
 </style>
 </head>
 <body class="bg-cream text-ink antialiased selection:bg-lagoon/30">
@@ -674,7 +701,7 @@
 </section>
 
 <!-- ===================== DOCTORS ===================== -->
-<section id="doctors" class="max-w-7xl mx-auto px-6 lg:px-10 py-24">
+<section id="doctors" class="max-w-[1500px] mx-auto px-6 lg:px-10 py-24">
   <div class="reveal max-w-xl mx-auto text-center mb-9">
     <p class="text-lagoon font-bold text-sm mb-3">پزشکان و متخصصان</p>
     <h2 class="text-3xl sm:text-4xl font-extrabold text-forestDark leading-tight">دامپزشکان فعال در پاستیل</h2>
@@ -691,7 +718,7 @@
   </div>
 
   <!-- Attractive doctor search -->
-  <div class="reveal max-w-2xl mx-auto mb-10">
+  <div class="reveal xl:hidden max-w-2xl mx-auto mb-10">
     <div class="paw-search-shell relative overflow-hidden border border-forest/10 rounded-[2rem] p-5 sm:p-6 shadow-xl shadow-forest/[0.06]">
       <div class="absolute -top-16 -left-12 w-40 h-40 rounded-full bg-mist/80 pointer-events-none"></div>
       <div class="absolute -bottom-20 -right-16 w-48 h-48 rounded-full bg-sage/10 pointer-events-none"></div>
@@ -772,6 +799,151 @@
     </div>
   </div>
 
+  <div class="grid xl:grid-cols-[300px_minmax(0,1fr)] gap-7 items-start">
+
+    <!-- Desktop-only doctor sidebar -->
+    <aside class="hidden xl:block xl:sticky xl:top-28 xl:self-start">
+      <div class="home-doctor-filter-sidebar relative overflow-hidden bg-white border border-ink/[0.06] rounded-[2rem] p-6">
+        <div aria-hidden="true" class="absolute -top-16 -left-14 w-40 h-40 rounded-full bg-blush/60"></div>
+        <div aria-hidden="true" class="absolute -bottom-20 -right-16 w-48 h-48 rounded-full bg-mist/80"></div>
+
+        <div class="relative">
+          <div class="w-12 h-12 rounded-2xl bg-mist text-forest flex items-center justify-center">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M5 21a7 7 0 0 1 14 0"/>
+              <path d="M18.5 4.5 20 6l2.5-2.5"/>
+            </svg>
+          </div>
+
+          <h3 class="text-lg font-extrabold text-forestDark mt-4">
+            دامپزشک خود را پیدا کنید
+          </h3>
+
+          <p class="text-xs text-ink/50 leading-6 mt-2">
+            دامپزشکان فعال در پاستیل متخصصان مستقلی هستند که اطلاعات حرفه‌ای آن‌ها پیش از فعال‌شدن حساب بررسی شده است.
+          </p>
+
+          <div class="mt-6 space-y-5">
+
+            <div>
+              <label for="homeDoctorSidebarSearchInput" class="block text-xs font-extrabold text-forestDark mb-2">
+                نام یا تخصص
+              </label>
+
+              <div class="relative">
+                <input
+                  id="homeDoctorSidebarSearchInput"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="مثلاً جراحی یا مریم..."
+                  class="w-full bg-cream/70 border border-ink/10 rounded-xl pr-10 pl-10 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all"
+                >
+
+                <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 text-forest pointer-events-none" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="7"/>
+                  <path d="M20 20l-3.5-3.5"/>
+                </svg>
+
+                <button
+                  id="clearHomeDoctorSidebarSearchBtn"
+                  type="button"
+                  class="hidden absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-white text-ink/40 hover:bg-forest hover:text-white transition-colors items-center justify-center"
+                  aria-label="پاک کردن جست‌وجو"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label for="homeDoctorSpecialtyFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                تخصص
+              </label>
+
+              <select id="homeDoctorSpecialtyFilter" class="home-doctor-filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                <option value="">همه تخصص‌ها</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="homeDoctorCityFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                شهر
+              </label>
+
+              <select id="homeDoctorCityFilter" class="home-doctor-filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                <option value="">همه شهرها</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="homeDoctorServiceFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                خدمت قابل ارائه
+              </label>
+
+              <select id="homeDoctorServiceFilter" class="home-doctor-filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                <option value="">همه خدمات</option>
+              </select>
+            </div>
+
+            <div>
+              <p class="text-xs font-extrabold text-forestDark mb-2">
+                حداقل سابقه
+              </p>
+
+              <div class="flex flex-wrap gap-2">
+                <button type="button" data-home-experience-filter="0" class="home-doctor-filter-chip active border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                  مهم نیست
+                </button>
+
+                <button type="button" data-home-experience-filter="3" class="home-doctor-filter-chip border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                  ۳ سال
+                </button>
+
+                <button type="button" data-home-experience-filter="5" class="home-doctor-filter-chip border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                  ۵ سال
+                </button>
+
+                <button type="button" data-home-experience-filter="10" class="home-doctor-filter-chip border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                  ۱۰ سال
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label for="homeDoctorSortFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                مرتب‌سازی
+              </label>
+
+              <select id="homeDoctorSortFilter" class="home-doctor-filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                <option value="default">پیشنهاد پاستیل</option>
+                <option value="experience-desc">بیشترین سابقه</option>
+                <option value="name-asc">نام، به ترتیب الفبا</option>
+              </select>
+            </div>
+
+            <button
+              id="resetHomeDoctorFiltersBtn"
+              type="button"
+              class="w-full border border-forest/15 hover:bg-mist text-forest text-xs font-extrabold py-3 rounded-xl transition-colors"
+            >
+              پاک‌کردن همه فیلترها
+            </button>
+          </div>
+
+          <div class="mt-6 pt-5 border-t border-ink/[0.06]">
+            <p id="homeDoctorSidebarResultCount" class="text-xs font-bold text-forest">
+              در حال دریافت دامپزشکان...
+            </p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="min-w-0">
+
   <div id="homeDoctorSearchEmpty" class="hidden max-w-xl mx-auto mb-6 bg-white border border-ink/[0.06] rounded-3xl px-6 py-9 text-center">
     <div class="w-14 h-14 mx-auto rounded-2xl bg-mist text-forest flex items-center justify-center mb-4">
       <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -779,8 +951,8 @@
         <path d="M20 20l-3.5-3.5M8.5 8.5l5 5M13.5 8.5l-5 5"/>
       </svg>
     </div>
-    <p class="font-bold text-forestDark">پزشکی با این نام پیدا نشد</p>
-    <p class="text-sm text-ink/45 mt-2">نام را کوتاه‌تر بنویسید یا املای آن را بررسی کنید.</p>
+    <p class="font-bold text-forestDark">دامپزشکی با این مشخصات پیدا نشد</p>
+    <p class="text-sm text-ink/45 mt-2">نام یا فیلترها را تغییر دهید و دوباره بررسی کنید.</p>
   </div>
 
   <div aria-hidden="true" class="pointer-events-none relative h-0">
@@ -842,6 +1014,8 @@
         <path d="m15 18-6-6 6-6"/>
       </svg>
     </a>
+  </div>
+    </div>
   </div>
 </section>
 
@@ -1218,6 +1392,8 @@ async function loadDoctors() {
       bio,
       photo_url,
       workplace_name,
+      city,
+      experience_years,
       profiles ( full_name ),
       doctor_services ( services ( title ) )
     `)
@@ -1354,6 +1530,11 @@ async function loadDoctors() {
       <article
         data-home-doctor-card="${doc.id}"
         data-doctor-search-name="${escapeReviewText(name)}"
+        data-doctor-specialty="${escapeReviewText(doc.specialty || '')}"
+        data-doctor-city="${escapeReviewText(doc.city || '')}"
+        data-doctor-workplace="${escapeReviewText(doc.workplace_name || '')}"
+        data-doctor-services="${escapeReviewText(serviceTags.join('|||'))}"
+        data-doctor-experience="${Number(doc.experience_years || 0)}"
         class="doctor-slider-card relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#fff7f4_100%)] rounded-3xl border border-ink/[0.06] p-6 text-center hover:border-forest/20 hover:shadow-xl hover:shadow-forest/[0.08] transition-all flex flex-col"
       >
         <svg class="doctor-card-paw" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true">
@@ -1496,9 +1677,20 @@ function getHomeDoctorItemsPerPage() {
 }
 
 function setupHomeDoctorSlider() {
-  const input = document.getElementById('homeDoctorSearchInput');
-  const clearButton = document.getElementById('clearHomeDoctorSearchBtn');
-  const resultCount = document.getElementById('homeDoctorSearchResultCount');
+  const mobileInput = document.getElementById('homeDoctorSearchInput');
+  const mobileClearButton = document.getElementById('clearHomeDoctorSearchBtn');
+  const mobileResultCount = document.getElementById('homeDoctorSearchResultCount');
+
+  const desktopInput = document.getElementById('homeDoctorSidebarSearchInput');
+  const desktopClearButton = document.getElementById('clearHomeDoctorSidebarSearchBtn');
+  const desktopResultCount = document.getElementById('homeDoctorSidebarResultCount');
+
+  const specialtyFilter = document.getElementById('homeDoctorSpecialtyFilter');
+  const cityFilter = document.getElementById('homeDoctorCityFilter');
+  const serviceFilter = document.getElementById('homeDoctorServiceFilter');
+  const sortFilter = document.getElementById('homeDoctorSortFilter');
+  const resetButton = document.getElementById('resetHomeDoctorFiltersBtn');
+
   const emptyState = document.getElementById('homeDoctorSearchEmpty');
   const container = document.getElementById('doctorsContainer');
 
@@ -1508,9 +1700,17 @@ function setupHomeDoctorSlider() {
   const pageInfo = document.getElementById('doctorSliderPageInfo');
 
   if (
-    !input ||
-    !clearButton ||
-    !resultCount ||
+    !mobileInput ||
+    !mobileClearButton ||
+    !mobileResultCount ||
+    !desktopInput ||
+    !desktopClearButton ||
+    !desktopResultCount ||
+    !specialtyFilter ||
+    !cityFilter ||
+    !serviceFilter ||
+    !sortFilter ||
+    !resetButton ||
     !emptyState ||
     !container ||
     !prevButton ||
@@ -1525,22 +1725,141 @@ function setupHomeDoctorSlider() {
     ...container.querySelectorAll('[data-home-doctor-card]')
   ];
 
-  function getFilteredCards() {
-    const query = normalizeHomeDoctorSearch(input.value);
+  let selectedExperience = 0;
 
-    if (!query) return doctorCards;
+  doctorCards.forEach((card, index) => {
+    card.dataset.originalOrder = String(index);
+  });
 
-    return doctorCards.filter(card => {
-      const doctorName = normalizeHomeDoctorSearch(
-        card.dataset.doctorSearchName
-      );
+  function uniqueSortedValues(values) {
+    return [...new Set(
+      values
+        .map(value => String(value || '').trim())
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, 'fa'));
+  }
 
-      return doctorName.includes(query);
+  function populateSelect(select, values, defaultLabel) {
+    select.innerHTML =
+      `<option value="">${defaultLabel}</option>` +
+      values.map(value => `
+        <option value="${escapeReviewText(value)}">
+          ${escapeReviewText(value)}
+        </option>
+      `).join('');
+  }
+
+  populateSelect(
+    specialtyFilter,
+    uniqueSortedValues(
+      doctorCards.map(card => card.dataset.doctorSpecialty)
+    ),
+    'همه تخصص‌ها'
+  );
+
+  populateSelect(
+    cityFilter,
+    uniqueSortedValues(
+      doctorCards.map(card => card.dataset.doctorCity)
+    ),
+    'همه شهرها'
+  );
+
+  populateSelect(
+    serviceFilter,
+    uniqueSortedValues(
+      doctorCards.flatMap(card =>
+        String(card.dataset.doctorServices || '')
+          .split('|||')
+          .filter(Boolean)
+      )
+    ),
+    'همه خدمات'
+  );
+
+  function setSearchValue(value) {
+    mobileInput.value = value;
+    desktopInput.value = value;
+  }
+
+  function updateClearButtons(hasQuery) {
+    [mobileClearButton, desktopClearButton].forEach(button => {
+      button.classList.toggle('hidden', !hasQuery);
+      button.classList.toggle('flex', hasQuery);
     });
   }
 
+  function getFilteredCards() {
+    const query = normalizeHomeDoctorSearch(desktopInput.value);
+    const specialty = normalizeHomeDoctorSearch(specialtyFilter.value);
+    const city = normalizeHomeDoctorSearch(cityFilter.value);
+    const service = normalizeHomeDoctorSearch(serviceFilter.value);
+
+    let filtered = doctorCards.filter(card => {
+      const nameText = normalizeHomeDoctorSearch(card.dataset.doctorSearchName);
+      const specialtyText = normalizeHomeDoctorSearch(card.dataset.doctorSpecialty);
+      const cityText = normalizeHomeDoctorSearch(card.dataset.doctorCity);
+      const workplaceText = normalizeHomeDoctorSearch(card.dataset.doctorWorkplace);
+      const services = String(card.dataset.doctorServices || '')
+        .split('|||')
+        .filter(Boolean);
+      const servicesText = normalizeHomeDoctorSearch(services.join(' '));
+      const experience = Number(card.dataset.doctorExperience || 0);
+
+      const matchesQuery =
+        !query ||
+        nameText.includes(query) ||
+        specialtyText.includes(query) ||
+        cityText.includes(query) ||
+        workplaceText.includes(query) ||
+        servicesText.includes(query);
+
+      const matchesSpecialty =
+        !specialty || specialtyText === specialty;
+
+      const matchesCity =
+        !city || cityText === city;
+
+      const matchesService =
+        !service || services.some(
+          title => normalizeHomeDoctorSearch(title) === service
+        );
+
+      return (
+        matchesQuery &&
+        matchesSpecialty &&
+        matchesCity &&
+        matchesService &&
+        experience >= selectedExperience
+      );
+    });
+
+    if (sortFilter.value === 'experience-desc') {
+      filtered.sort(
+        (a, b) =>
+          Number(b.dataset.doctorExperience || 0) -
+          Number(a.dataset.doctorExperience || 0)
+      );
+    } else if (sortFilter.value === 'name-asc') {
+      filtered.sort((a, b) =>
+        String(a.dataset.doctorSearchName || '').localeCompare(
+          String(b.dataset.doctorSearchName || ''),
+          'fa'
+        )
+      );
+    } else {
+      filtered.sort(
+        (a, b) =>
+          Number(a.dataset.originalOrder) -
+          Number(b.dataset.originalOrder)
+      );
+    }
+
+    return filtered;
+  }
+
   function renderDoctorSlider() {
-    const query = normalizeHomeDoctorSearch(input.value);
+    const query = normalizeHomeDoctorSearch(desktopInput.value);
     const filteredCards = getFilteredCards();
     const itemsPerPage = getHomeDoctorItemsPerPage();
     const totalPages = Math.max(
@@ -1555,6 +1874,11 @@ function setupHomeDoctorSlider() {
     if (homeDoctorSliderPage < 0) {
       homeDoctorSliderPage = 0;
     }
+
+    const filteredSet = new Set(filteredCards);
+
+    [...filteredCards, ...doctorCards.filter(card => !filteredSet.has(card))]
+      .forEach(card => container.appendChild(card));
 
     doctorCards.forEach(card => {
       card.classList.add('hidden');
@@ -1572,23 +1896,17 @@ function setupHomeDoctorSlider() {
     });
 
     const hasResults = filteredCards.length > 0;
+    const hasQuery = Boolean(query);
 
-    emptyState.classList.toggle('hidden', hasResults || !query);
+    emptyState.classList.toggle('hidden', hasResults);
+    updateClearButtons(hasQuery);
 
-    if (query) {
-      clearButton.classList.remove('hidden');
-      clearButton.classList.add('flex');
+    const countText = hasResults
+      ? `${filteredCards.length.toLocaleString('fa-IR')} دامپزشک منتخب پیدا شد.`
+      : 'دامپزشکی با این مشخصات پیدا نشد.';
 
-      resultCount.textContent = hasResults
-        ? `${filteredCards.length.toLocaleString('fa-IR')} پزشک در میان دامپزشکان منتخب پیدا شد.`
-        : 'در میان دامپزشکان منتخب نتیجه‌ای پیدا نشد.';
-    } else {
-      clearButton.classList.add('hidden');
-      clearButton.classList.remove('flex');
-
-      resultCount.textContent =
-        `${doctorCards.length.toLocaleString('fa-IR')} دامپزشک منتخب در اسلایدر`;
-    }
+    mobileResultCount.textContent = countText;
+    desktopResultCount.textContent = countText;
 
     pageInfo.textContent =
       `صفحه ${(homeDoctorSliderPage + 1).toLocaleString('fa-IR')} از ${totalPages.toLocaleString('fa-IR')}`;
@@ -1603,6 +1921,38 @@ function setupHomeDoctorSlider() {
     nextButton.disabled = homeDoctorSliderPage >= totalPages - 1;
   }
 
+  function handleSearchInput(sourceInput) {
+    setSearchValue(sourceInput.value);
+    homeDoctorSliderPage = 0;
+    renderDoctorSlider();
+  }
+
+  function clearSearch(focusInput) {
+    setSearchValue('');
+    homeDoctorSliderPage = 0;
+    renderDoctorSlider();
+    focusInput.focus();
+  }
+
+  function resetFilters() {
+    setSearchValue('');
+    specialtyFilter.value = '';
+    cityFilter.value = '';
+    serviceFilter.value = '';
+    sortFilter.value = 'default';
+    selectedExperience = 0;
+
+    document.querySelectorAll('[data-home-experience-filter]').forEach(button => {
+      button.classList.toggle(
+        'active',
+        Number(button.dataset.homeExperienceFilter) === 0
+      );
+    });
+
+    homeDoctorSliderPage = 0;
+    renderDoctorSlider();
+  }
+
   prevButton.onclick = () => {
     homeDoctorSliderPage -= 1;
     renderDoctorSlider();
@@ -1613,17 +1963,35 @@ function setupHomeDoctorSlider() {
     renderDoctorSlider();
   };
 
-  input.oninput = () => {
-    homeDoctorSliderPage = 0;
-    renderDoctorSlider();
-  };
+  mobileInput.oninput = () => handleSearchInput(mobileInput);
+  desktopInput.oninput = () => handleSearchInput(desktopInput);
 
-  clearButton.onclick = () => {
-    input.value = '';
-    homeDoctorSliderPage = 0;
-    renderDoctorSlider();
-    input.focus();
-  };
+  mobileClearButton.onclick = () => clearSearch(mobileInput);
+  desktopClearButton.onclick = () => clearSearch(desktopInput);
+
+  [specialtyFilter, cityFilter, serviceFilter, sortFilter].forEach(select => {
+    select.addEventListener('change', () => {
+      homeDoctorSliderPage = 0;
+      renderDoctorSlider();
+    });
+  });
+
+  document.querySelectorAll('[data-home-experience-filter]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedExperience = Number(
+        button.dataset.homeExperienceFilter
+      );
+
+      document.querySelectorAll('[data-home-experience-filter]').forEach(item => {
+        item.classList.toggle('active', item === button);
+      });
+
+      homeDoctorSliderPage = 0;
+      renderDoctorSlider();
+    });
+  });
+
+  resetButton.addEventListener('click', resetFilters);
 
   window.addEventListener('resize', () => {
     clearTimeout(homeDoctorSliderResizeTimer);
@@ -1636,7 +2004,6 @@ function setupHomeDoctorSlider() {
 
   renderDoctorSlider();
 }
-
 
 async function loadServices() {
     const container = document.getElementById('servicesContainer');
