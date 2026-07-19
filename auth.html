@@ -130,6 +130,12 @@ tailwind.config = {
 
     <div class="relative">
 
+      <div id="accountContextBadge" class="hidden max-w-md mx-auto mb-4 text-center">
+        <span id="accountContextBadgeText" class="inline-flex items-center justify-center bg-shell border border-nude/80 text-forestDark text-xs font-extrabold px-4 py-2 rounded-full">
+          حساب کاربری
+        </span>
+      </div>
+
       <!-- Login / Signup Tabs -->
       <div class="flex bg-mist rounded-2xl p-1.5 mb-7 max-w-md mx-auto">
         <button type="button" id="tabLogin" class="tab-active flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors">
@@ -143,7 +149,7 @@ tailwind.config = {
       <!-- ================= LOGIN ================= -->
       <form id="loginForm" class="space-y-4 max-w-md mx-auto">
         <div class="text-center mb-6">
-          <h1 class="text-xl font-extrabold text-forestDark">ورود به حساب کاربری</h1>
+          <h1 id="loginHeading" class="text-xl font-extrabold text-forestDark">ورود به حساب کاربری</h1>
           <p class="text-xs text-ink/45 mt-2">با شماره موبایل و رمز عبور ثابت وارد شوید.</p>
         </div>
 
@@ -183,7 +189,7 @@ tailwind.config = {
           id="loginBtn"
           class="w-full bg-forest hover:bg-forestDark text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-forest/25 flex items-center justify-center gap-2"
         >
-          <span>ورود به حساب کاربری</span>
+          <span id="loginButtonLabel">ورود به حساب کاربری</span>
         </button>
       </form>
 
@@ -485,6 +491,16 @@ tailwind.config = {
   const doctorForm = document.getElementById('doctorForm');
   const doctorSuccessPanel = document.getElementById('doctorSuccessPanel');
 
+  const requestedAccountType = new URLSearchParams(
+    window.location.search
+  ).get('account');
+
+  const selectedAccountType = ['pet-owner', 'doctor'].includes(
+    requestedAccountType
+  )
+    ? requestedAccountType
+    : null;
+
   const choosePetOwner = document.getElementById('choosePetOwner');
   const chooseDoctor = document.getElementById('chooseDoctor');
 
@@ -503,6 +519,45 @@ tailwind.config = {
     }
   })();
 
+  // ---------- Account Context ----------
+  function getLoginButtonText() {
+    if (selectedAccountType === 'doctor') {
+      return 'ورود به حساب دامپزشک';
+    }
+
+    if (selectedAccountType === 'pet-owner') {
+      return 'ورود به حساب سرپرست';
+    }
+
+    return 'ورود به حساب کاربری';
+  }
+
+  function applyAccountContext() {
+    const badge = document.getElementById('accountContextBadge');
+    const badgeText = document.getElementById('accountContextBadgeText');
+    const heading = document.getElementById('loginHeading');
+    const buttonLabel = document.getElementById('loginButtonLabel');
+
+    if (!selectedAccountType) {
+      badge.classList.add('hidden');
+      heading.textContent = 'ورود به حساب کاربری';
+      buttonLabel.textContent = 'ورود به حساب کاربری';
+      return;
+    }
+
+    badge.classList.remove('hidden');
+
+    if (selectedAccountType === 'doctor') {
+      badgeText.textContent = 'حساب دامپزشک';
+      heading.textContent = 'ورود به حساب دامپزشک';
+    } else {
+      badgeText.textContent = 'حساب سرپرست حیوان خانگی';
+      heading.textContent = 'ورود به حساب سرپرست';
+    }
+
+    buttonLabel.textContent = getLoginButtonText();
+  }
+
   // ---------- Tabs ----------
   function activateLoginTab() {
     tabLogin.classList.add('tab-active');
@@ -515,7 +570,39 @@ tailwind.config = {
     signupArea.classList.add('hidden');
   }
 
-  function activateSignupTab() {
+  async function showPetOwnerSignupForm() {
+    signupChooser.classList.add('hidden');
+    doctorForm.classList.add('hidden');
+    doctorSuccessPanel.classList.add('hidden');
+    petOwnerForm.classList.remove('hidden');
+  }
+
+  async function showDoctorSignupForm() {
+    signupChooser.classList.add('hidden');
+    petOwnerForm.classList.add('hidden');
+    doctorSuccessPanel.classList.add('hidden');
+    doctorForm.classList.remove('hidden');
+    setDoctorStep(1);
+    await loadDoctorServices();
+  }
+
+  async function showRequestedSignupForm() {
+    clearAllMessages();
+
+    if (selectedAccountType === 'pet-owner') {
+      await showPetOwnerSignupForm();
+      return;
+    }
+
+    if (selectedAccountType === 'doctor') {
+      await showDoctorSignupForm();
+      return;
+    }
+
+    showSignupChooser();
+  }
+
+  async function activateSignupTab() {
     tabSignup.classList.add('tab-active');
     tabSignup.classList.remove('text-ink/60');
 
@@ -525,7 +612,7 @@ tailwind.config = {
     loginForm.classList.add('hidden');
     signupArea.classList.remove('hidden');
 
-    showSignupChooser();
+    await showRequestedSignupForm();
   }
 
   tabLogin.addEventListener('click', activateLoginTab);
@@ -543,20 +630,18 @@ tailwind.config = {
     clearAllMessages();
   }
 
-  choosePetOwner.addEventListener('click', () => {
-    signupChooser.classList.add('hidden');
-    petOwnerForm.classList.remove('hidden');
-  });
-
-  chooseDoctor.addEventListener('click', async () => {
-    signupChooser.classList.add('hidden');
-    doctorForm.classList.remove('hidden');
-    setDoctorStep(1);
-    await loadDoctorServices();
-  });
+  choosePetOwner.addEventListener('click', showPetOwnerSignupForm);
+  chooseDoctor.addEventListener('click', showDoctorSignupForm);
 
   document.querySelectorAll('.backToChooser').forEach(button => {
-    button.addEventListener('click', showSignupChooser);
+    button.addEventListener('click', () => {
+      if (selectedAccountType) {
+        activateLoginTab();
+        return;
+      }
+
+      showSignupChooser();
+    });
   });
 
   document.getElementById('returnToLoginBtn').addEventListener('click', () => {
@@ -566,6 +651,8 @@ tailwind.config = {
     infoBox.textContent = 'درخواست دامپزشکی شما ثبت شده و در انتظار بررسی پاستیل است.';
     infoBox.classList.remove('hidden');
   });
+
+  applyAccountContext();
 
   // ---------- Helpers ----------
   function setLoading(button, loading, label) {
@@ -758,7 +845,7 @@ tailwind.config = {
     });
 
     if (loginError) {
-      setLoading(button, false, 'ورود به حساب کاربری');
+      setLoading(button, false, getLoginButtonText());
       errorBox.textContent = translateAuthError(loginError, 'login');
       errorBox.classList.remove('hidden');
       return;
@@ -782,7 +869,7 @@ tailwind.config = {
 
     if (!applicationError && application) {
       await supabaseClient.auth.signOut();
-      setLoading(button, false, 'ورود به حساب کاربری');
+      setLoading(button, false, getLoginButtonText());
 
       if (application.status === 'pending') {
         infoBox.textContent = 'درخواست دامپزشکی شما در انتظار بررسی پاستیل است.';
@@ -804,6 +891,16 @@ tailwind.config = {
         infoBox.classList.remove('hidden');
         return;
       }
+    }
+
+    if (selectedAccountType === 'doctor') {
+      await supabaseClient.auth.signOut();
+      setLoading(button, false, getLoginButtonText());
+
+      errorBox.textContent =
+        'این شماره برای حساب سرپرست ثبت شده است. از گزینه «حساب سرپرست» وارد شوید.';
+      errorBox.classList.remove('hidden');
+      return;
     }
 
     window.location.href = 'index.html';
