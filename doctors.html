@@ -63,6 +63,50 @@ tailwind.config = {
     opacity: .35;
     cursor: not-allowed;
   }
+
+  .filter-select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, #7FA793 50%),
+      linear-gradient(135deg, #7FA793 50%, transparent 50%);
+    background-position:
+      18px calc(50% - 2px),
+      13px calc(50% - 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .filter-sidebar {
+    box-shadow: 0 18px 55px rgba(31, 92, 82, .07);
+  }
+
+  .filter-chip {
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+  }
+
+  .filter-chip.active {
+    background: #1F5C52;
+    border-color: #1F5C52;
+    color: #fff;
+  }
+
+  @media (max-width: 1023px) {
+    #doctorFiltersPanel {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition: max-height .35s ease, opacity .25s ease, margin .35s ease;
+    }
+
+    #doctorFiltersPanel.open {
+      max-height: 1200px;
+      opacity: 1;
+      pointer-events: auto;
+      margin-top: 1rem;
+    }
+  }
+
 </style>
 </head>
 
@@ -111,67 +155,192 @@ tailwind.config = {
     </p>
   </section>
 
-  <section class="max-w-3xl mx-auto mt-10">
-    <div class="relative overflow-hidden bg-white border border-forest/10 rounded-[2rem] p-5 sm:p-6 shadow-xl shadow-forest/[0.06]">
-      <div aria-hidden="true" class="absolute -top-16 -left-12 w-40 h-40 rounded-full bg-blush/70"></div>
-      <div aria-hidden="true" class="absolute -bottom-20 -right-16 w-48 h-48 rounded-full bg-nude/55"></div>
+  <section class="mt-10">
 
-      <div class="relative">
-        <label for="allDoctorsSearchInput" class="block text-sm font-extrabold text-forestDark mb-3">
-          جست‌وجوی دامپزشک
-        </label>
+    <button
+      id="toggleDoctorFiltersBtn"
+      type="button"
+      class="lg:hidden w-full flex items-center justify-between gap-4 bg-white border border-forest/10 rounded-2xl px-5 py-4 text-forestDark font-extrabold shadow-lg shadow-forest/[0.05]"
+      aria-expanded="false"
+      aria-controls="doctorFiltersPanel"
+    >
+      <span class="inline-flex items-center gap-2">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M4 6h16M7 12h10M10 18h4"/>
+        </svg>
+        فیلتر دامپزشکان
+      </span>
 
-        <div class="relative">
-          <input
-            id="allDoctorsSearchInput"
-            type="search"
-            autocomplete="off"
-            placeholder="نام یا تخصص دامپزشک..."
-            class="w-full bg-cream/70 border border-ink/10 rounded-2xl pr-12 pl-12 py-4 text-sm text-forestDark outline-none focus:bg-white focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all"
-          >
+      <svg id="doctorFiltersToggleIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="transition-transform">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    </button>
 
-          <svg class="absolute right-4 top-1/2 -translate-y-1/2 text-forest pointer-events-none" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7"/>
-            <path d="M20 20l-3.5-3.5"/>
-          </svg>
+    <div class="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-7 items-start">
 
-          <button
-            id="clearAllDoctorsSearchBtn"
-            type="button"
-            class="hidden absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-white text-ink/40 hover:bg-forest hover:text-white transition-colors items-center justify-center"
-            aria-label="پاک کردن جست‌وجو"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round">
-              <path d="M18 6 6 18M6 6l12 12"/>
-            </svg>
-          </button>
+      <aside id="doctorFiltersPanel" class="lg:sticky lg:top-28 lg:self-start">
+        <div class="filter-sidebar relative overflow-hidden bg-white border border-ink/[0.06] rounded-[2rem] p-5 sm:p-6">
+          <div aria-hidden="true" class="absolute -top-16 -left-14 w-40 h-40 rounded-full bg-blush/60"></div>
+          <div aria-hidden="true" class="absolute -bottom-20 -right-16 w-48 h-48 rounded-full bg-mist/80"></div>
+
+          <div class="relative">
+            <div class="w-12 h-12 rounded-2xl bg-mist text-forest flex items-center justify-center">
+              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M5 21a7 7 0 0 1 14 0"/>
+                <path d="M18.5 4.5 20 6l2.5-2.5"/>
+              </svg>
+            </div>
+
+            <h2 class="text-lg font-extrabold text-forestDark mt-4">
+              دامپزشک مناسب را پیدا کنید
+            </h2>
+
+            <p class="text-xs text-ink/50 leading-6 mt-2">
+              دامپزشکان فعال در پاستیل متخصصان مستقلی هستند که اطلاعات حرفه‌ای آن‌ها پیش از فعال‌شدن حساب بررسی شده است.
+            </p>
+
+            <div class="mt-6 space-y-5">
+
+              <div>
+                <label for="allDoctorsSearchInput" class="block text-xs font-extrabold text-forestDark mb-2">
+                  نام یا تخصص
+                </label>
+
+                <div class="relative">
+                  <input
+                    id="allDoctorsSearchInput"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="مثلاً جراحی یا مریم..."
+                    class="w-full bg-cream/70 border border-ink/10 rounded-xl pr-10 pl-10 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all"
+                  >
+
+                  <svg class="absolute right-3.5 top-1/2 -translate-y-1/2 text-forest pointer-events-none" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M20 20l-3.5-3.5"/>
+                  </svg>
+
+                  <button
+                    id="clearAllDoctorsSearchBtn"
+                    type="button"
+                    class="hidden absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-white text-ink/40 hover:bg-forest hover:text-white transition-colors items-center justify-center"
+                    aria-label="پاک کردن جست‌وجو"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round">
+                      <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label for="doctorSpecialtyFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                  تخصص
+                </label>
+                <select id="doctorSpecialtyFilter" class="filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                  <option value="">همه تخصص‌ها</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="doctorCityFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                  شهر
+                </label>
+                <select id="doctorCityFilter" class="filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                  <option value="">همه شهرها</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="doctorServiceFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                  خدمت قابل ارائه
+                </label>
+                <select id="doctorServiceFilter" class="filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                  <option value="">همه خدمات</option>
+                </select>
+              </div>
+
+              <div>
+                <p class="text-xs font-extrabold text-forestDark mb-2">
+                  حداقل سابقه
+                </p>
+
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" data-experience-filter="0" class="filter-chip active border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                    مهم نیست
+                  </button>
+                  <button type="button" data-experience-filter="3" class="filter-chip border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                    ۳ سال
+                  </button>
+                  <button type="button" data-experience-filter="5" class="filter-chip border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                    ۵ سال
+                  </button>
+                  <button type="button" data-experience-filter="10" class="filter-chip border border-ink/10 rounded-full px-3 py-1.5 text-[11px] font-bold text-ink/55">
+                    ۱۰ سال
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label for="doctorSortFilter" class="block text-xs font-extrabold text-forestDark mb-2">
+                  مرتب‌سازی
+                </label>
+                <select id="doctorSortFilter" class="filter-select w-full bg-cream/70 border border-ink/10 rounded-xl px-4 py-3 text-xs text-forestDark outline-none focus:bg-white focus:border-forest">
+                  <option value="default">پیشنهاد پاستیل</option>
+                  <option value="experience-desc">بیشترین سابقه</option>
+                  <option value="name-asc">نام، به ترتیب الفبا</option>
+                </select>
+              </div>
+
+              <button
+                id="resetDoctorFiltersBtn"
+                type="button"
+                class="w-full border border-forest/15 hover:bg-mist text-forest text-xs font-extrabold py-3 rounded-xl transition-colors"
+              >
+                پاک‌کردن همه فیلترها
+              </button>
+            </div>
+
+            <div class="mt-6 pt-5 border-t border-ink/[0.06]">
+              <p id="allDoctorsResultCount" class="text-xs font-bold text-forest">
+                در حال دریافت دامپزشکان...
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="min-w-0">
+        <div id="activeDoctorFilters" class="hidden mb-5 flex flex-wrap items-center gap-2"></div>
+
+        <div id="allDoctorsLoading" class="py-20 text-center">
+          <div class="w-10 h-10 mx-auto rounded-full border-4 border-mist border-t-forest animate-spin"></div>
+          <p class="text-sm text-ink/40 mt-4">در حال بارگذاری دامپزشکان...</p>
         </div>
 
-        <p id="allDoctorsResultCount" class="text-xs text-ink/40 mt-3">
-          در حال دریافت دامپزشکان...
-        </p>
+        <section
+          id="allDoctorsContainer"
+          class="hidden grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+        ></section>
+
+        <div id="allDoctorsEmpty" class="hidden bg-white border border-ink/[0.06] rounded-3xl p-10 text-center">
+          <div class="w-14 h-14 mx-auto rounded-2xl bg-mist text-forest flex items-center justify-center">
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="M20 20l-3.5-3.5"/>
+            </svg>
+          </div>
+          <p class="font-extrabold text-forestDark mt-4">دامپزشکی با این مشخصات پیدا نشد</p>
+          <p class="text-sm text-ink/45 mt-2">یکی از فیلترها را تغییر دهید یا همه فیلترها را پاک کنید.</p>
+        </div>
+
+        <div id="allDoctorsError" class="hidden text-sm text-red-600 bg-red-50 rounded-xl px-5 py-4 text-center"></div>
+
+        <nav id="allDoctorsPagination" class="hidden mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="صفحه‌بندی دامپزشکان"></nav>
       </div>
     </div>
   </section>
-
-  <div id="allDoctorsLoading" class="py-20 text-center">
-    <div class="w-10 h-10 mx-auto rounded-full border-4 border-mist border-t-forest animate-spin"></div>
-    <p class="text-sm text-ink/40 mt-4">در حال بارگذاری دامپزشکان...</p>
-  </div>
-
-  <section
-    id="allDoctorsContainer"
-    class="hidden mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-  ></section>
-
-  <div id="allDoctorsEmpty" class="hidden max-w-xl mx-auto mt-12 bg-white border border-ink/[0.06] rounded-3xl p-10 text-center">
-    <p class="font-extrabold text-forestDark">دامپزشکی پیدا نشد</p>
-    <p class="text-sm text-ink/45 mt-2">عبارت جست‌وجو را کوتاه‌تر یا متفاوت وارد کنید.</p>
-  </div>
-
-  <div id="allDoctorsError" class="hidden max-w-xl mx-auto mt-12 text-sm text-red-600 bg-red-50 rounded-xl px-5 py-4 text-center"></div>
-
-  <nav id="allDoctorsPagination" class="hidden mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="صفحه‌بندی دامپزشکان"></nav>
 </main>
 
 <footer class="border-t border-ink/[0.06] bg-white mt-12">
@@ -189,6 +358,7 @@ tailwind.config = {
   let filteredDoctors = [];
   let currentPage = 1;
   let bookingTarget = 'auth.html';
+  let selectedExperienceFilter = 0;
 
   function escapeText(value) {
     return String(value || '')
@@ -290,42 +460,186 @@ tailwind.config = {
     }
 
     allDoctors = data || [];
-    filteredDoctors = [...allDoctors];
+    populateDoctorFilters();
 
     const params = new URLSearchParams(window.location.search);
     const initialQuery = params.get('q') || '';
 
     document.getElementById('allDoctorsSearchInput').value = initialQuery;
 
-    applyDoctorsSearch();
+    applyDoctorFilters();
   }
 
-  function applyDoctorsSearch() {
+  function getDoctorServices(doctor) {
+    return (doctor.doctor_services || [])
+      .map(item => item.services?.title)
+      .filter(Boolean);
+  }
+
+  function uniqueSortedValues(values) {
+    return [...new Set(
+      values
+        .map(value => String(value || '').trim())
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, 'fa'));
+  }
+
+  function populateSelect(selectId, values, defaultLabel) {
+    const select = document.getElementById(selectId);
+
+    select.innerHTML =
+      `<option value="">${defaultLabel}</option>` +
+      values.map(value => `
+        <option value="${escapeText(value)}">${escapeText(value)}</option>
+      `).join('');
+  }
+
+  function populateDoctorFilters() {
+    populateSelect(
+      'doctorSpecialtyFilter',
+      uniqueSortedValues(allDoctors.map(doctor => doctor.specialty)),
+      'همه تخصص‌ها'
+    );
+
+    populateSelect(
+      'doctorCityFilter',
+      uniqueSortedValues(allDoctors.map(doctor => doctor.city)),
+      'همه شهرها'
+    );
+
+    populateSelect(
+      'doctorServiceFilter',
+      uniqueSortedValues(allDoctors.flatMap(getDoctorServices)),
+      'همه خدمات'
+    );
+  }
+
+  function renderActiveDoctorFilters() {
+    const container = document.getElementById('activeDoctorFilters');
+    const filters = [];
+
+    const query = document.getElementById('allDoctorsSearchInput').value.trim();
+    const specialty = document.getElementById('doctorSpecialtyFilter').value;
+    const city = document.getElementById('doctorCityFilter').value;
+    const service = document.getElementById('doctorServiceFilter').value;
+
+    if (query) filters.push(`جست‌وجو: ${query}`);
+    if (specialty) filters.push(`تخصص: ${specialty}`);
+    if (city) filters.push(`شهر: ${city}`);
+    if (service) filters.push(`خدمت: ${service}`);
+    if (selectedExperienceFilter) {
+      filters.push(`حداقل ${selectedExperienceFilter.toLocaleString('fa-IR')} سال سابقه`);
+    }
+
+    if (!filters.length) {
+      container.classList.add('hidden');
+      container.innerHTML = '';
+      return;
+    }
+
+    container.classList.remove('hidden');
+    container.innerHTML = filters.map(label => `
+      <span class="inline-flex items-center gap-1.5 bg-mist text-forest text-[11px] font-bold px-3 py-1.5 rounded-full">
+        ${escapeText(label)}
+      </span>
+    `).join('');
+  }
+
+  function applyDoctorFilters() {
     const input = document.getElementById('allDoctorsSearchInput');
     const clearButton = document.getElementById('clearAllDoctorsSearchBtn');
+
     const query = normalizeSearch(input.value);
+    const specialty = normalizeSearch(
+      document.getElementById('doctorSpecialtyFilter').value
+    );
+    const city = normalizeSearch(
+      document.getElementById('doctorCityFilter').value
+    );
+    const service = normalizeSearch(
+      document.getElementById('doctorServiceFilter').value
+    );
+    const sort = document.getElementById('doctorSortFilter').value;
 
     filteredDoctors = allDoctors.filter(doctor => {
-      const name = normalizeSearch(doctor.profiles?.full_name);
-      const specialty = normalizeSearch(doctor.specialty);
-      const services = normalizeSearch(
-        (doctor.doctor_services || [])
-          .map(item => item.services?.title)
-          .filter(Boolean)
-          .join(' ')
-      );
+      const nameText = normalizeSearch(doctor.profiles?.full_name);
+      const specialtyText = normalizeSearch(doctor.specialty);
+      const cityText = normalizeSearch(doctor.city);
+      const workplaceText = normalizeSearch(doctor.workplace_name);
+      const servicesText = normalizeSearch(getDoctorServices(doctor).join(' '));
+      const experience = Number(doctor.experience_years || 0);
 
-      return !query ||
-        name.includes(query) ||
-        specialty.includes(query) ||
-        services.includes(query);
+      const matchesQuery =
+        !query ||
+        nameText.includes(query) ||
+        specialtyText.includes(query) ||
+        cityText.includes(query) ||
+        workplaceText.includes(query) ||
+        servicesText.includes(query);
+
+      const matchesSpecialty =
+        !specialty || specialtyText === specialty;
+
+      const matchesCity =
+        !city || cityText === city;
+
+      const matchesService =
+        !service || getDoctorServices(doctor).some(
+          title => normalizeSearch(title) === service
+        );
+
+      const matchesExperience =
+        experience >= selectedExperienceFilter;
+
+      return (
+        matchesQuery &&
+        matchesSpecialty &&
+        matchesCity &&
+        matchesService &&
+        matchesExperience
+      );
     });
+
+    if (sort === 'experience-desc') {
+      filteredDoctors.sort(
+        (a, b) =>
+          Number(b.experience_years || 0) -
+          Number(a.experience_years || 0)
+      );
+    } else if (sort === 'name-asc') {
+      filteredDoctors.sort((a, b) =>
+        String(a.profiles?.full_name || '').localeCompare(
+          String(b.profiles?.full_name || ''),
+          'fa'
+        )
+      );
+    }
 
     clearButton.classList.toggle('hidden', !query);
     clearButton.classList.toggle('flex', Boolean(query));
 
     currentPage = 1;
+    renderActiveDoctorFilters();
     renderDoctorsPage();
+  }
+
+  function resetDoctorFilters() {
+    document.getElementById('allDoctorsSearchInput').value = '';
+    document.getElementById('doctorSpecialtyFilter').value = '';
+    document.getElementById('doctorCityFilter').value = '';
+    document.getElementById('doctorServiceFilter').value = '';
+    document.getElementById('doctorSortFilter').value = 'default';
+
+    selectedExperienceFilter = 0;
+
+    document.querySelectorAll('[data-experience-filter]').forEach(button => {
+      button.classList.toggle(
+        'active',
+        Number(button.dataset.experienceFilter) === 0
+      );
+    });
+
+    applyDoctorFilters();
   }
 
   async function renderDoctorsPage() {
@@ -603,7 +917,7 @@ tailwind.config = {
 
   document.getElementById('allDoctorsSearchInput').addEventListener(
     'input',
-    applyDoctorsSearch
+    applyDoctorFilters
   );
 
   document.getElementById('clearAllDoctorsSearchBtn').addEventListener(
@@ -611,8 +925,51 @@ tailwind.config = {
     () => {
       const input = document.getElementById('allDoctorsSearchInput');
       input.value = '';
-      applyDoctorsSearch();
+      applyDoctorFilters();
       input.focus();
+    }
+  );
+
+  [
+    'doctorSpecialtyFilter',
+    'doctorCityFilter',
+    'doctorServiceFilter',
+    'doctorSortFilter'
+  ].forEach(id => {
+    document.getElementById(id).addEventListener(
+      'change',
+      applyDoctorFilters
+    );
+  });
+
+  document.querySelectorAll('[data-experience-filter]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedExperienceFilter =
+        Number(button.dataset.experienceFilter);
+
+      document.querySelectorAll('[data-experience-filter]').forEach(item => {
+        item.classList.toggle('active', item === button);
+      });
+
+      applyDoctorFilters();
+    });
+  });
+
+  document.getElementById('resetDoctorFiltersBtn').addEventListener(
+    'click',
+    resetDoctorFilters
+  );
+
+  document.getElementById('toggleDoctorFiltersBtn').addEventListener(
+    'click',
+    () => {
+      const panel = document.getElementById('doctorFiltersPanel');
+      const button = document.getElementById('toggleDoctorFiltersBtn');
+      const icon = document.getElementById('doctorFiltersToggleIcon');
+      const isOpen = panel.classList.toggle('open');
+
+      button.setAttribute('aria-expanded', String(isOpen));
+      icon.classList.toggle('rotate-180', isOpen);
     }
   );
 
